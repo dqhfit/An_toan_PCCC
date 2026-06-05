@@ -139,7 +139,7 @@ let ENV_TOKEN = false;
 
 function esc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
 function toast(m){const t=document.getElementById("toast");t.textContent=m;t.classList.add("show");clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove("show"),2200);}
-function authHeaders(){return {"Content-Type":"application/json","Authorization":"Bearer "+TOKEN};}
+function authHeaders(){return {"Content-Type":"application/json","X-Admin-Token":TOKEN};}
 
 async function api(path, method, body){
     const res = await fetch(API+path, {method:method||"GET", headers:authHeaders(), body: body?JSON.stringify(body):undefined});

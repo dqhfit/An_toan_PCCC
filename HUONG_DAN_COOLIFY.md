@@ -33,12 +33,21 @@ Vào tab **Storages / Persistent Storage** của ứng dụng → **Add**:
 App đã được cấu hình ghi dữ liệu vào `/data` (biến môi trường `DATA_DIR=/data` đặt sẵn
 trong Dockerfile). Nếu dùng Docker Compose thì volume `pccc-data:/data` đã khai báo sẵn.
 
-## D. Biến môi trường
+## D. Biến môi trường & BẢO MẬT
 Trong tab **Environment Variables**:
+- `APP_PASSWORD=<mật-khẩu-mạnh>` — **BẮT BUỘC khi đưa ra Internet/domain công khai.**
+  Khi đặt, toàn bộ ứng dụng + API yêu cầu đăng nhập (HTTP Basic Auth) — trình duyệt hỏi
+  user/mật khẩu một lần. `APP_USER` mặc định `pccc` (đổi nếu muốn). *Nếu KHÔNG đặt, server
+  mở cho mọi người truy cập — chỉ dùng trong mạng nội bộ kín.*
 - `ADMIN_TOKEN=<chuỗi-bí-mật-mạnh>` — **NÊN đặt** để bảo vệ trang quản trị. Nếu bỏ trống,
   server tự sinh token (xem trong log deploy) và lưu ở `/data/admin_token.txt`.
 - `PORT=3000` (tuỳ chọn — Coolify thường tự xử lý qua reverse proxy).
 - `DATA_DIR=/data` (đã có sẵn trong Dockerfile).
+
+> **Lưu ý bảo mật:** ứng dụng dùng mô hình "chọn tên" (không có đăng nhập riêng từng người).
+> Vì vậy khi public **phải** bật `APP_PASSWORD` (hoặc dùng Basic Auth/giới hạn IP của Coolify)
+> để chặn người lạ đọc/sửa dữ liệu. File nhạy cảm (token, db, config) nằm trong volume `/data`
+> và đã được chặn không cho phục vụ ra ngoài.
 
 ## E. Tên miền & HTTPS
 - Đặt **Domain** cho ứng dụng trong Coolify (vd `pccc.congty.com`). Coolify tự cấp HTTPS.

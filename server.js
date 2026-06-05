@@ -17,8 +17,10 @@ const crypto = require("crypto");
 const PORT = process.env.PORT || 3000;
 const HOST = process.env.HOST || "0.0.0.0";
 const ROOT = __dirname;
-// Dữ liệu lưu ở DATA_DIR (gắn volume bền vững khi chạy trên Docker/Coolify)
-const DATA_DIR = process.env.DATA_DIR || ROOT;
+// Dữ liệu lưu ở DATA_DIR (gắn volume bền vững khi chạy trên Docker/Coolify).
+// Mặc định là thư mục con "data" — KHÔNG để trùng ROOT để file nhạy cảm không bị
+// server tĩnh phục vụ ra ngoài (token, db, config).
+const DATA_DIR = process.env.DATA_DIR || path.join(ROOT, "data");
 const DBFILE = process.env.DB_FILE || path.join(DATA_DIR, "pccc_db.json");
 try { fs.mkdirSync(DATA_DIR, { recursive: true }); } catch (e) { /* ignore */ }
 
@@ -51,9 +53,22 @@ if (!ADMIN_TOKEN) {
   } catch (e) { ADMIN_TOKEN = crypto.randomBytes(12).toString("hex"); }
 }
 function isAuthed(req) {
+  // Token quản trị gửi qua header X-Admin-Token (để không đụng Authorization của Basic Auth)
+  return !!req.headers["x-admin-token"] && req.headers["x-admin-token"] === ADMIN_TOKEN;
+}
+
+// ----- Basic Auth toàn cục (tuỳ chọn) — BẮT BUỘC bật khi đưa ra Internet -----
+// Đặt APP_PASSWORD (và tuỳ chọn APP_USER) để chặn mọi truy cập chưa đăng nhập.
+const APP_USER = process.env.APP_USER || "pccc";
+const APP_PASSWORD = process.env.APP_PASSWORD || "";
+function basicAuthOK(req) {
+  if (!APP_PASSWORD) return true; // không đặt mật khẩu => không gác (chỉ nên dùng mạng nội bộ)
   const h = req.headers["authorization"] || "";
-  const t = h.startsWith("Bearer ") ? h.slice(7) : (req.headers["x-admin-token"] || "");
-  return !!t && t === ADMIN_TOKEN;
+  if (!h.startsWith("Basic ")) return false;
+  let dec = "";
+  try { dec = Buffer.from(h.slice(6), "base64").toString("utf8"); } catch (e) { return false; }
+  const i = dec.indexOf(":");
+  return dec.slice(0, i) === APP_USER && dec.slice(i + 1) === APP_PASSWORD;
 }
 function readBody(req, res, cb) {
   let body = "";
@@ -104,6 +119,11 @@ const server = http.createServer((req, res) => {
   const u = new URL(req.url, "http://localhost");
   if (req.method === "OPTIONS") return send(res, 204, "");
 
+  // Gác Basic Auth cho mọi request (trừ health check để Coolify kiểm tra được)
+  if (u.pathname !== "/api/health" && !basicAuthOK(req)) {
+    return send(res, 401, "Cần đăng nhập", { "WWW-Authenticate": 'Basic realm="PCCC", charset="UTF-8"' });
+  }
+
   // ---- API ----
   if (u.pathname === "/api/health") {
     return send(res, 200, JSON.stringify({ ok: true, now: nowISO(), count: Object.keys(db.records).length }),
@@ -118,9 +138,12 @@ const server = http.createServer((req, res) => {
       catch (e) { return send(res, 400, JSON.stringify({ error: "JSON không hợp lệ" }), { "Content-Type": "application/json" }); }
       const since = payload.since || null;
       const incoming = Array.isArray(payload.records) ? payload.records : [];
+      const maxFuture = Date.now() + 24 * 3600 * 1000; // chống mốc thời gian tương lai bất thường
       // gộp theo last-write-wins
       for (const rec of incoming) {
         if (!rec || !rec.id) continue;
+        const t = Date.parse(rec.updatedAt || "");
+        if (!isNaN(t) && t > maxFuture) continue; // bỏ qua bản ghi updatedAt quá xa ở tương lai
         const cur = db.records[rec.id];
         if (!cur || String(rec.updatedAt || "") >= String(cur.updatedAt || "")) db.records[rec.id] = rec;
       }
@@ -204,6 +227,10 @@ const server = http.createServer((req, res) => {
   if (p === "/") p = "/PCCC_App.html";
   const file = path.normalize(path.join(ROOT, p));
   if (!file.startsWith(ROOT)) return send(res, 403, "Forbidden");
+  // Chặn lộ file nhạy cảm & toàn bộ thư mục dữ liệu (kể cả khi DATA_DIR trùng ROOT)
+  const SENSITIVE = ["admin_token.txt", "pccc_db.json", "config.json"];
+  if (SENSITIVE.includes(path.basename(file)) || file.startsWith(path.normalize(DATA_DIR) + path.sep))
+    return send(res, 403, "Forbidden");
   fs.readFile(file, (err, data) => {
     if (err) return send(res, 404, "Not found: " + p);
     send(res, 200, data, { "Content-Type": MIME[path.extname(file).toLowerCase()] || "application/octet-stream" });
@@ -216,6 +243,7 @@ server.listen(PORT, HOST, () => {
   console.log("  Mở ứng dụng:  http://localhost:" + PORT + "/");
   console.log("  Trang quản trị: http://localhost:" + PORT + "/admin.html");
   console.log("  Admin token:  " + (TOKEN_FROM_ENV ? "(đặt qua biến môi trường ADMIN_TOKEN)" : ADMIN_TOKEN));
+  console.log("  Basic Auth:   " + (APP_PASSWORD ? ("BẬT (user=" + APP_USER + ")") : "TẮT — chỉ dùng trong mạng nội bộ; đặt APP_PASSWORD khi public"));
   console.log("  Dữ liệu lưu:  " + DBFILE);
   console.log("  Dừng: Ctrl + C");
   console.log("==================================================");
