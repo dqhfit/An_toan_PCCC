@@ -14,6 +14,7 @@
  * ========================================================================== */
 window.PCCC_MEMBERS = {
   company: "Công ty TNHH SX & TM VFM — DQH",
+  companies: ["VFM", "DQH"],
   members: [
     // ----- Ban chỉ huy / Quản lý -----
     { name: "Chu Văn Long",           msnv: "002495", unit: "VFM", department: "Bảo trì",     position: "Đội trưởng PCCC",      role: "manager" },

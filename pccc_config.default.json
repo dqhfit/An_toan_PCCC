@@ -1,5 +1,6 @@
 {
   "company": "Công ty TNHH SX & TM VFM — DQH",
+  "companies": ["VFM", "DQH"],
   "members": [
     { "name": "Chu Văn Long",           "msnv": "002495", "unit": "VFM", "department": "Bảo trì",     "position": "Đội trưởng PCCC",        "role": "manager" },
     { "name": "Đỗ Hữu Thiện",           "msnv": "000719", "unit": "VFM", "department": "Văn phòng",   "position": "Đội phó PCCC",           "role": "manager" },

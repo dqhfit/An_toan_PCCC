@@ -383,13 +383,13 @@ const TYPES = {
     title:d=>"Biên bản huấn luyện — "+fmtDate(d.ngay),
     fields:[
       {s:"Thông tin chung"},
-      {n:"donVi",l:"Đơn vị",t:"select",o:["VFM","DQH"],def:"VFM"},
+      {n:"donVi",l:"Đơn vị",t:"select",dyn:"companies"},
       {n:"soBienBan",l:"Số biên bản",t:"text",ph:"…/BB-PCCC"},
       {n:"ngay",l:"Ngày lập",t:"date",def:todayISO},
       {n:"diaDiem",l:"Địa điểm",t:"text"},
       {n:"gioBatDau",l:"Giờ bắt đầu",t:"time"},
       {n:"gioKetThuc",l:"Giờ kết thúc",t:"time"},
-      {n:"chuTri",l:"Người chủ trì / hướng dẫn",t:"text"},
+      {n:"chuTri",l:"Người chủ trì / hướng dẫn",t:"text",person:true},
       {n:"thuKy",l:"Thư ký",t:"text"},
       {s:"Nội dung & kết quả"},
       {n:"noiDung",l:"Nội dung huấn luyện",t:"textarea",full:true,def:"1. Phổ biến kiến thức pháp luật, nội quy an toàn PCCC.\n2. Hướng dẫn nhận biết nguy cơ cháy nổ tại khu vực làm việc.\n3. Hướng dẫn sử dụng phương tiện chữa cháy tại chỗ.\n4. Quy trình báo cháy, thoát nạn và xử lý sự cố ban đầu."},
@@ -411,7 +411,7 @@ const TYPES = {
     title:d=>"Biên bản diễn tập — "+fmtDate(d.ngay),
     fields:[
       {s:"Thông tin chung"},
-      {n:"donVi",l:"Đơn vị",t:"select",o:["VFM","DQH"],def:"VFM"},
+      {n:"donVi",l:"Đơn vị",t:"select",dyn:"companies"},
       {n:"soBienBan",l:"Số biên bản",t:"text",ph:"…/BB-DT"},
       {n:"ngay",l:"Ngày diễn tập",t:"date",def:todayISO},
       {n:"gio",l:"Giờ",t:"time"},
@@ -442,14 +442,14 @@ const TYPES = {
     title:d=>"Họp ATVSV tháng "+(d.thang||"…")+"/"+(d.nam||"…")+" ("+(d.donVi||"")+")",
     fields:[
       {s:"Thông tin chung"},
-      {n:"donVi",l:"Đơn vị",t:"select",o:["VFM","DQH"],def:"VFM"},
+      {n:"donVi",l:"Đơn vị",t:"select",dyn:"companies"},
       {n:"soBienBan",l:"Số biên bản",t:"text",ph:"…/BB-ATVSV"},
       {n:"thang",l:"Kỳ họp tháng",t:"number",ph:"1-12"},
       {n:"nam",l:"Năm",t:"number",def:nowYear},
       {n:"ngay",l:"Ngày họp",t:"date",def:todayISO},
       {n:"gio",l:"Giờ",t:"time"},
       {n:"diaDiem",l:"Địa điểm",t:"text"},
-      {n:"chuTri",l:"Chủ trì",t:"text"},
+      {n:"chuTri",l:"Chủ trì",t:"text",person:true},
       {n:"thuKy",l:"Thư ký",t:"text"},
       {n:"soThamDu",l:"Số thành viên tham dự",t:"text",ph:"vd: 8/10"},
       {s:"Nội dung cuộc họp"},
@@ -472,7 +472,7 @@ const TYPES = {
     title:d=>"Kế hoạch triển khai PCCC năm "+(d.nam||"…")+" ("+(d.donVi||"")+")",
     fields:[
       {s:"Thông tin chung"},
-      {n:"donVi",l:"Đơn vị",t:"select",o:["VFM","DQH"],def:"VFM"},
+      {n:"donVi",l:"Đơn vị",t:"select",dyn:"companies"},
       {n:"soKeHoach",l:"Số kế hoạch",t:"text",ph:"…/KH-PCCC"},
       {n:"nam",l:"Năm",t:"number",def:nowYear},
       {n:"ngay",l:"Ngày lập",t:"date",def:todayISO},
@@ -496,7 +496,7 @@ const TYPES = {
     title:d=>"Hoạt động PCCC năm "+(d.nam||"…")+" ("+(d.donVi||"")+")",
     fields:[
       {s:"Thông tin chung"},
-      {n:"donVi",l:"Đơn vị",t:"select",o:["VFM","DQH"],def:"VFM"},
+      {n:"donVi",l:"Đơn vị",t:"select",dyn:"companies"},
       {n:"nam",l:"Năm",t:"number",def:nowYear},
       {n:"maTaiLieu",l:"Mã tài liệu",t:"text"},
       {n:"ngay",l:"Ngày lập",t:"date",def:todayISO},
@@ -512,9 +512,9 @@ const TYPES = {
     title:d=>"Báo cáo sự cố/nguy cơ — "+fmtDate(d.ngay),
     fields:[
       {s:"Thông tin người báo cáo"},
-      {n:"donVi",l:"Đơn vị",t:"select",o:["VFM","DQH"],def:"VFM"},
+      {n:"donVi",l:"Đơn vị",t:"select",dyn:"companies"},
       {n:"soVanBan",l:"Số phiếu",t:"text"},
-      {n:"nguoiBaoCao",l:"Người báo cáo",t:"text"},
+      {n:"nguoiBaoCao",l:"Người báo cáo",t:"text",person:true},
       {n:"boPhan",l:"Bộ phận",t:"text"},
       {n:"ngay",l:"Ngày phát hiện",t:"date",def:todayISO},
       {n:"gio",l:"Giờ",t:"time"},
@@ -537,12 +537,12 @@ const TYPES = {
     title:d=>"Kiểm tra thiết bị PCCC — "+fmtDate(d.ngay),
     fields:[
       {s:"Thông tin chung"},
-      {n:"donVi",l:"Đơn vị",t:"select",o:["VFM","DQH"],def:"VFM"},
+      {n:"donVi",l:"Đơn vị",t:"select",dyn:"companies"},
       {n:"soVanBan",l:"Số phiếu",t:"text"},
       {n:"ngay",l:"Ngày kiểm tra",t:"date",def:todayISO},
       {n:"ky",l:"Kỳ kiểm tra",t:"text",ph:"vd: Tháng 6/2026"},
       {n:"khuVuc",l:"Khu vực",t:"text"},
-      {n:"nguoiKiemTra",l:"Người kiểm tra",t:"text"},
+      {n:"nguoiKiemTra",l:"Người kiểm tra",t:"text",person:true},
       {s:"Danh mục kiểm tra (ghi Đạt / Không đạt)"},
       {n:"thietBi",l:"",t:"list",cols:[
         {n:"ten",l:"Thiết bị / Hạng mục"},{n:"viTri",l:"Vị trí",w:"120px"},{n:"tinhTrang",l:"Tình trạng",w:"100px"},{n:"bienPhap",l:"Biện pháp xử lý",w:"170px"}
@@ -574,12 +574,12 @@ const TYPES = {
     title:d=>"Báo cáo công tác PCCC "+(d.ky||"")+" "+(d.thoiGian||""),
     fields:[
       {s:"Thông tin chung"},
-      {n:"donVi",l:"Đơn vị",t:"select",o:["VFM","DQH"],def:"VFM"},
+      {n:"donVi",l:"Đơn vị",t:"select",dyn:"companies"},
       {n:"soVanBan",l:"Số báo cáo",t:"text"},
       {n:"ky",l:"Kỳ báo cáo",t:"select",o:["Tháng","Quý","6 tháng","Năm","Đột xuất"]},
       {n:"thoiGian",l:"Thời gian",t:"text",ph:"vd: Tháng 6/2026"},
       {n:"ngay",l:"Ngày lập",t:"date",def:todayISO},
-      {n:"nguoiLap",l:"Người lập",t:"text"},
+      {n:"nguoiLap",l:"Người lập",t:"text",person:true},
       {s:"Số liệu hoạt động"},
       {n:"soLieu",l:"",t:"list",cols:[
         {n:"chiTieu",l:"Chỉ tiêu"},{n:"soLuong",l:"Số lượng",w:"110px"},{n:"ghiChu",l:"Ghi chú",w:"200px"}
@@ -605,7 +605,7 @@ const TYPES = {
     title:d=>"Phân công công việc PCCC ("+(d.donVi||"")+")",
     fields:[
       {s:"Thông tin chung"},
-      {n:"donVi",l:"Đơn vị",t:"select",o:["VFM","DQH"],def:"VFM"},
+      {n:"donVi",l:"Đơn vị",t:"select",dyn:"companies"},
       {n:"soVanBan",l:"Số văn bản",t:"text"},
       {n:"apDung",l:"Áp dụng từ",t:"text",ph:"vd: 06/2026"},
       {n:"ngay",l:"Ngày lập",t:"date",def:todayISO},
@@ -645,7 +645,7 @@ const TYPES = {
     title:d=>"Danh sách đội viên PCCC ("+(d.donVi||"")+")",
     fields:[
       {s:"Thông tin chung"},
-      {n:"donVi",l:"Đơn vị",t:"select",o:["VFM","DQH"],def:"VFM"},
+      {n:"donVi",l:"Đơn vị",t:"select",dyn:"companies"},
       {n:"diaChi",l:"Địa chỉ",t:"text"},
       {n:"apDung",l:"Áp dụng từ / Năm",t:"text",ph:"vd: 06/2026"},
       {n:"ngay",l:"Ngày lập",t:"date",def:todayISO},
@@ -695,6 +695,8 @@ let DASH_YEAR = nowYear();
 
 /* ---- Danh bạ thành viên & đăng nhập theo tên (cấu hình: pccc_members.js) ---- */
 let MEMBERS = (typeof window!=="undefined" && window.PCCC_MEMBERS && Array.isArray(window.PCCC_MEMBERS.members)) ? window.PCCC_MEMBERS.members : null;
+let COMPANIES = (typeof window!=="undefined" && window.PCCC_MEMBERS && Array.isArray(window.PCCC_MEMBERS.companies) && window.PCCC_MEMBERS.companies.length) ? window.PCCC_MEMBERS.companies.slice() : ["VFM","DQH"];
+function companyOptions(cur){const o=COMPANIES.slice();if(cur&&o.indexOf(cur)<0)o.unshift(cur);return o;}
 let CURRENT_USER = null;
 function roleLabel(r){return r==="member"?"Thành viên":"Đội trưởng / Quản lý";}
 function tryRestoreUser(){
@@ -732,8 +734,8 @@ function chooseUser(i){
 }
 function applyUserDefaults(d){
     if(!CURRENT_USER)return;
-    if(("donVi" in d)&&(CURRENT_USER.unit==="VFM"||CURRENT_USER.unit==="DQH"))d.donVi=CURRENT_USER.unit;
-    ["nguoiBaoCao","nguoiKiemTra","nguoiLap"].forEach(k=>{if((k in d)&&!d[k])d[k]=CURRENT_USER.name;});
+    if(("donVi" in d)&&CURRENT_USER.unit)d.donVi=CURRENT_USER.unit; // tự điền công ty theo người tạo
+    ["nguoiBaoCao","nguoiKiemTra","nguoiLap","chuTri"].forEach(k=>{if((k in d)&&!d[k])d[k]=CURRENT_USER.name;});
     if(("boPhan" in d)&&!d.boPhan)d.boPhan=CURRENT_USER.department||"";
 }
 
@@ -1027,8 +1029,9 @@ function fieldEditor(rec,f){
     let input;
     const bind=`oninput="setField('${f.n}',this.value)" onchange="setField('${f.n}',this.value)"`;
     if(f.t==="textarea")input=`<textarea id="${id}" ${bind}>${esc(v)}</textarea>`;
-    else if(f.t==="select"){const opts=['<option value=""></option>'].concat(f.o.map(o=>`<option ${o==v?"selected":""}>${esc(o)}</option>`)).join("");input=`<select id="${id}" ${bind}>${opts}</select>`;}
+    else if(f.t==="select"){const src=f.dyn==="companies"?companyOptions(v):(f.o||[]);const opts=['<option value=""></option>'].concat(src.map(o=>`<option ${o==v?"selected":""}>${esc(o)}</option>`)).join("");input=`<select id="${id}" ${bind}>${opts}</select>`;}
     else input=`<input id="${id}" type="${f.t||'text'}" value="${esc(v)}" placeholder="${esc(f.ph||'')}" ${bind}>`;
+    if(f.person&&MEMBERS)input=`<div class="cellpick">${input}<button class="cpk" title="Chọn từ danh bạ (tự điền công ty)" onclick="openFieldPicker('${f.n}')">👤</button></div>`;
     return `<div class="fld ${f.full?'full':''}"><label>${esc(f.l)}</label>${input}</div>`;
 }
 function setField(name,val){if(!STATE.current)return;STATE.current.data[name]=val;touch();maybeRetitle();}
@@ -1121,6 +1124,29 @@ function pickCell(i){
     const m=MEMBERS[i];if(!m){closePicker();return;}
     const {name,row,col,prop}=CELL_PICK;
     if(STATE.current&&STATE.current.data[name]&&STATE.current.data[name][row]){STATE.current.data[name][row][col]=m[prop]||m.name||"";}
+    touch();renderMain();closePicker();
+}
+
+/* ---- chọn 1 người cho ô (field) — điền tên & tự điền công ty theo người ---- */
+let FIELD_PICK=null;
+function openFieldPicker(name){
+    if(!MEMBERS){toast("Chưa có file cấu hình danh bạ (pccc_members.js)");return;}
+    FIELD_PICK=name;
+    const list=pickerGroups(({m,i})=>`<div class="pk-item click" data-s="${memberSearch(m)}" onclick="pickFieldPerson(${i})"><b>${esc(m.name)}</b><span>${esc(m.department||"")}${m.unit?" · "+esc(m.unit):""}</span></div>`);
+    document.getElementById("picker").innerHTML=`<div class="login-box pk-box">
+        <h2>Chọn người thực hiện</h2>
+        <p>Bấm vào tên — hệ thống điền tên và tự điền công ty của người đó.</p>
+        <input class="pk-search" placeholder="🔎 Tìm theo tên / bộ phận..." oninput="pkSearch(this.value)">
+        <div class="pk-list">${list}</div>
+        <div style="margin-top:12px;text-align:right"><button class="btn ghost" onclick="closePicker()">Hủy</button></div>
+    </div>`;
+    document.getElementById("picker").classList.add("open");
+}
+function pickFieldPerson(i){
+    if(!FIELD_PICK){closePicker();return;}
+    const m=MEMBERS[i];if(!m||!STATE.current){closePicker();return;}
+    STATE.current.data[FIELD_PICK]=m.name;
+    if(("donVi" in STATE.current.data) && m.unit) STATE.current.data.donVi=m.unit; // tự điền công ty theo người
     touch();renderMain();closePicker();
 }
 function confirmMemberPicker(){
@@ -1574,6 +1600,7 @@ async function loadServerConfig(){
                 MEMBERS=c.members;
                 window.PCCC_MEMBERS={company:c.company||((window.PCCC_MEMBERS||{}).company||""),members:c.members};
             }
+            if(c && Array.isArray(c.companies) && c.companies.length) COMPANIES=c.companies.slice();
         }
     }catch(e){ /* không có server config — dùng pccc_members.js */ }
 }

@@ -37,6 +37,7 @@ function loadConfig() {
     }
   } catch (e) { console.error("Đọc config lỗi:", e.message); }
   if (!Array.isArray(config.members)) config.members = [];
+  if (!Array.isArray(config.companies) || !config.companies.length) config.companies = ["VFM", "DQH"];
   if (typeof config.company !== "string") config.company = "";
 }
 function saveConfig() { try { fs.writeFileSync(CONFIG_FILE, JSON.stringify(config, null, 2)); } catch (e) { console.error("Lưu config lỗi:", e.message); } }
@@ -161,7 +162,7 @@ const server = http.createServer((req, res) => {
 
   // ---- API cấu hình (công khai: chỉ trả members để app hiển thị màn hình chọn tên) ----
   if (u.pathname === "/api/config" && req.method === "GET") {
-    return send(res, 200, JSON.stringify({ company: config.company || "", members: config.members || [] }), { "Content-Type": "application/json" });
+    return send(res, 200, JSON.stringify({ company: config.company || "", companies: config.companies || [], members: config.members || [] }), { "Content-Type": "application/json" });
   }
 
   // ---- API quản trị (cần token) ----
@@ -181,6 +182,10 @@ const server = http.createServer((req, res) => {
       return readBody(req, res, p => {
         if (!p || !Array.isArray(p.members)) return send(res, 400, JSON.stringify({ error: "Thiếu danh sách members[]" }), { "Content-Type": "application/json" });
         config.company = String(p.company || "");
+        if (Array.isArray(p.companies)) {
+          const list = p.companies.map(s => String(s).trim()).filter(Boolean);
+          config.companies = list.length ? list : config.companies;
+        }
         config.members = p.members.map(m => ({
           name: String(m.name || "").trim(), msnv: String(m.msnv || "").trim(),
           unit: String(m.unit || "").trim(), department: String(m.department || "").trim(),
