@@ -25,13 +25,30 @@ git push -u origin main
 3. **Port**: đặt **3000** (mục *Ports Exposes* / *Port* = `3000`).
 4. **Health Check** (nếu có mục cấu hình): Path = `/api/health`, Port = `3000`.
 
-## C. Gắn lưu trữ bền vững (BẮT BUỘC)
-Vào tab **Storages / Persistent Storage** của ứng dụng → **Add**:
-- **Name**: `pccc-data`
-- **Mount Path (trong container)**: `/data`
+## C. Gắn lưu trữ bền vững (BẮT BUỘC) — Coolify v4
 
-App đã được cấu hình ghi dữ liệu vào `/data` (biến môi trường `DATA_DIR=/data` đặt sẵn
-trong Dockerfile). Nếu dùng Docker Compose thì volume `pccc-data:/data` đã khai báo sẵn.
+App ghi token/db/cấu hình vào thư mục **`/data`** (đã đặt `DATA_DIR=/data` trong Dockerfile).
+Nếu KHÔNG gắn volume vào `/data`, **mọi dữ liệu sẽ mất sau mỗi lần deploy/restart**.
+
+### Nếu build pack là **Dockerfile** (hoặc Nixpacks) — PHẢI tự thêm Storage:
+1. Mở ứng dụng → tab **Storages** → **+ Add**.
+2. Chọn loại **Volume Mount** (khuyến nghị):
+   - **Name**: `pccc-data`
+   - **Destination Path**: `/data`  ← phải đúng `/data`
+   - (Source Path để trống — Coolify tự tạo & quản lý named volume.)
+3. **Save** → bấm **Redeploy** để áp dụng.
+
+> Muốn xem/sao lưu file trực tiếp trên máy chủ: chọn **Bind Mount** thay vì Volume Mount,
+> điền **Source Path** (đường dẫn trên host, vd `/data/pccc`) và **Destination Path** = `/data`.
+
+### Nếu build pack là **Docker Compose**:
+- **Không cần thao tác ở tab Storages.** File `docker-compose.yml` đã khai báo sẵn named volume
+  `pccc-data:/data`; Coolify v4 tự tạo và giữ volume này qua mỗi lần deploy.
+
+### Kiểm tra volume hoạt động
+Tạo 1 hồ sơ → **💾 Lưu** → bấm **Redeploy** → hồ sơ vẫn còn ⇒ volume OK.
+(Đổi `DATA_DIR` sang path khác thì phải đặt thêm biến môi trường `DATA_DIR=<path>` cho khớp
+với Destination Path của storage.)
 
 ## D. Biến môi trường & BẢO MẬT
 Trong tab **Environment Variables**:
