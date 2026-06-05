@@ -1,0 +1,1584 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ứng dụng Quản lý Hồ sơ An toàn - PCCC | VFM &amp; DQH</title>
+<style>
+    :root{
+        --primary:#1b365d; --primary2:#2e5b88; --accent:#c0392b;
+        --bg:#eef2f7; --surface:#fff; --line:#d9e0e8; --soft:#f4f7fb; --ink:#27313c; --muted:#5b6b7c;
+        --ok:#1e7e44; --warn:#9a6a00;
+    }
+    *{box-sizing:border-box;}
+    body{margin:0;font-family:Arial,"Segoe UI",sans-serif;color:var(--ink);background:var(--bg);font-size:14px;}
+    button{font-family:inherit;cursor:pointer;}
+    .btn{border:1px solid var(--primary);background:var(--primary);color:#fff;border-radius:6px;padding:8px 14px;font-size:13px;font-weight:bold;}
+    .btn:hover{background:var(--primary2);}
+    .btn.ghost{background:#fff;color:var(--primary);}
+    .btn.ghost:hover{background:var(--soft);}
+    .btn.danger{background:#fff;color:var(--accent);border-color:var(--accent);}
+    .btn.danger:hover{background:#fdf2f1;}
+    .btn.sm{padding:5px 10px;font-size:12px;}
+    .btn.save{background:var(--ok);border-color:var(--ok);}
+    .btn.save:hover{background:#19663a;}
+
+    /* ===== Layout ===== */
+    .topbar{position:sticky;top:0;z-index:20;background:linear-gradient(135deg,var(--primary),var(--primary2));color:#fff;display:flex;align-items:center;gap:14px;padding:12px 20px;box-shadow:0 2px 8px rgba(0,0,0,.15);}
+    .topbar .logo{width:38px;height:38px;border:2px solid rgba(255,255,255,.6);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:bold;}
+    .topbar h1{font-size:16px;margin:0;text-transform:uppercase;letter-spacing:.5px;}
+    .topbar .sub{font-size:11.5px;opacity:.85;font-weight:normal;text-transform:none;display:block;letter-spacing:0;}
+    .topbar .spacer{flex:1;}
+    .menubtn{display:none;border:1px solid rgba(255,255,255,.5);background:rgba(255,255,255,.14);color:#fff;border-radius:6px;font-size:18px;line-height:1;padding:5px 11px;cursor:pointer;}
+    .topbar .btn{border-color:rgba(255,255,255,.5);}
+    .layout{display:flex;min-height:calc(100vh - 62px);}
+    .sidebar{width:300px;flex:0 0 300px;background:var(--surface);border-right:1px solid var(--line);padding:16px;overflow-y:auto;}
+    .main{flex:1;padding:24px 28px;overflow-y:auto;}
+
+    .new-wrap{position:relative;margin-bottom:14px;}
+    .new-menu{display:none;position:absolute;left:0;top:46px;background:#fff;border:1px solid var(--line);border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,.12);z-index:30;width:100%;overflow:hidden;}
+    .new-menu.open{display:block;}
+    .new-menu button{display:flex;gap:10px;width:100%;border:none;background:#fff;padding:10px 14px;text-align:left;font-size:13px;align-items:center;}
+    .new-menu button:hover{background:var(--soft);}
+    .btn.block{width:100%;display:flex;align-items:center;justify-content:center;gap:8px;}
+
+    .search{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:6px;margin-bottom:10px;font-size:13px;}
+    .filters{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;}
+    .chip{border:1px solid var(--line);background:#fff;border-radius:14px;padding:3px 10px;font-size:11.5px;color:var(--muted);}
+    .chip.active{background:var(--primary);color:#fff;border-color:var(--primary);}
+
+    .rec{border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin-bottom:8px;cursor:pointer;background:#fff;}
+    .rec:hover{border-color:var(--primary2);box-shadow:0 2px 8px rgba(27,54,93,.08);}
+    .rec.active{border-color:var(--primary);background:var(--soft);}
+    .rec .t{font-weight:bold;font-size:13px;color:var(--primary);}
+    .rec .m{font-size:11.5px;color:var(--muted);margin-top:3px;display:flex;justify-content:space-between;gap:6px;}
+    .tag{display:inline-block;font-size:10.5px;padding:1px 7px;border-radius:9px;background:#e7eef7;color:var(--primary2);font-weight:bold;}
+    .empty{color:var(--muted);font-size:13px;text-align:center;padding:30px 10px;font-style:italic;}
+
+    /* ===== Editor ===== */
+    .welcome{max-width:640px;margin:30px auto;text-align:center;color:var(--muted);}
+    .welcome h2{color:var(--primary);}
+    .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-top:20px;}
+    .card{border:1px solid var(--line);border-radius:10px;padding:16px;background:#fff;cursor:pointer;text-align:left;}
+    .card:hover{border-color:var(--primary2);box-shadow:0 3px 10px rgba(27,54,93,.1);}
+    .card .ic{font-size:22px;}
+    .card .ti{font-weight:bold;color:var(--primary);margin-top:6px;font-size:13.5px;}
+    .card .de{font-size:11.5px;color:var(--muted);margin-top:3px;}
+
+    /* guide */
+    .guide{max-width:980px;}
+    .gbanner{display:flex;gap:14px;align-items:center;background:linear-gradient(135deg,var(--primary),var(--primary2));color:#fff;border-radius:12px;padding:18px 22px;margin-bottom:18px;}
+    .gbanner .bic{font-size:30px;}
+    .gbanner h3{margin:0 0 3px;font-size:16px;}
+    .gbanner p{margin:0;font-size:12.5px;opacity:.9;}
+    .gbanner button{margin-left:auto;white-space:nowrap;}
+    .step{display:flex;gap:12px;margin-bottom:12px;align-items:flex-start;}
+    .step .num{flex:0 0 30px;height:30px;background:var(--primary);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:14px;}
+    .step .sc{flex:1;}
+    .step .sc b{color:var(--primary);}
+    .step .acts{margin-top:5px;display:flex;flex-wrap:wrap;gap:6px;}
+    .gtable{width:100%;border-collapse:collapse;margin:12px 0;font-size:13px;}
+    .gtable th,.gtable td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top;}
+    .gtable th{background:var(--soft);color:var(--primary);}
+    .gtable td .btn{white-space:nowrap;}
+    .mcards{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin:8px 0;}
+    .mcard{border:1px solid var(--line);border-radius:10px;padding:14px;background:#fff;}
+    .mcard .mi{font-size:22px;}
+    .mcard .mt{font-weight:bold;color:var(--primary);margin:5px 0;}
+    .mcard .md{font-size:12px;color:var(--muted);margin-bottom:8px;}
+    .callout{background:#fff7ec;border-left:4px solid var(--warn);padding:12px 16px;border-radius:8px;margin:16px 0;font-size:13px;}
+
+    /* role selector */
+    .rolesel{border:1px solid rgba(255,255,255,.5);background:rgba(255,255,255,.14);color:#fff;border-radius:6px;padding:7px 8px;font-size:12.5px;font-weight:bold;cursor:pointer;}
+    .rolesel option{color:#000;}
+    .userchip{border:1px solid rgba(255,255,255,.5);background:rgba(255,255,255,.16);color:#fff;border-radius:18px;padding:7px 12px;font-size:12.5px;font-weight:bold;cursor:pointer;}
+    .userchip:hover{background:rgba(255,255,255,.28);}
+
+    /* login / choose name */
+    .login{display:none;position:fixed;inset:0;background:rgba(15,25,45,.78);z-index:120;align-items:center;justify-content:center;padding:20px;}
+    .login.open{display:flex;}
+    .login-box{background:#fff;border-radius:14px;padding:30px 32px;max-width:430px;width:100%;text-align:center;box-shadow:0 12px 44px rgba(0,0,0,.35);}
+    .login-box .logo{width:54px;height:54px;margin:0 auto 12px;background:linear-gradient(135deg,var(--primary),var(--primary2));color:#fff;border-radius:11px;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:13px;}
+    .login-box h2{margin:0 0 4px;color:var(--primary);font-size:18px;}
+    .login-box p{margin:0 0 18px;color:var(--muted);font-size:13px;}
+    .login-box label{display:block;text-align:left;font-size:12.5px;font-weight:bold;color:var(--muted);margin-bottom:6px;}
+    .login-box select{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:14px;margin-bottom:14px;font-family:inherit;}
+    .pk-box{max-width:470px;text-align:left;}
+    .pk-box h2{text-align:left;}
+    .pk-box p{margin:0 0 12px;}
+    .pk-list{max-height:46vh;overflow-y:auto;border:1px solid var(--line);border-radius:8px;padding:4px;}
+    .pk-grp{font-size:11px;font-weight:bold;text-transform:uppercase;color:var(--muted);padding:8px 8px 4px;}
+    .pk-item{display:flex;align-items:center;gap:9px;padding:7px 8px;border-radius:6px;font-size:13px;cursor:pointer;}
+    .pk-item:hover{background:var(--soft);}
+    .pk-item span{color:var(--muted);font-size:12px;}
+    .pk-item input{width:16px;height:16px;flex:0 0 16px;}
+    .pk-item.click{cursor:pointer;}
+    .pk-item.disabled{opacity:.5;cursor:not-allowed;}
+    .pk-added{color:var(--ok);font-style:normal;font-weight:bold;font-size:11px;}
+    .pk-search{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px;margin-bottom:8px;font-size:13px;font-family:inherit;}
+    .cellpick{display:flex;gap:4px;align-items:center;}
+    .cpk{border:1px solid var(--line);background:#fff;border-radius:5px;cursor:pointer;padding:4px 6px;font-size:12px;flex:0 0 auto;line-height:1;}
+    .cpk:hover{background:var(--soft);}
+
+    /* dashboard */
+    .dash{max-width:980px;}
+    .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:6px;}
+    .stat{border:1px solid var(--line);border-radius:10px;padding:14px 16px;background:#fff;}
+    .stat .n{font-size:28px;font-weight:bold;color:var(--primary);line-height:1.1;}
+    .stat .l{font-size:12px;color:var(--muted);margin-top:2px;}
+    .charts{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px;margin-top:8px;}
+    .chart{border:1px solid var(--line);border-radius:10px;padding:12px 14px 28px;background:#fff;}
+    .ctitle{font-size:13px;font-weight:bold;color:var(--primary);margin-bottom:20px;}
+    .ctitle small{color:var(--muted);font-weight:normal;}
+    .bars{display:flex;align-items:flex-end;gap:4px;height:96px;}
+    .bar{flex:1;border-radius:3px 3px 0 0;min-height:2px;position:relative;}
+    .bar b{position:absolute;top:-15px;left:0;right:0;text-align:center;font-size:10px;color:var(--primary);font-weight:bold;}
+    .bar span{position:absolute;bottom:-18px;left:0;right:0;text-align:center;font-size:9px;color:var(--muted);}
+    .tbar{display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:12.5px;}
+    .tbar .tn{flex:0 0 210px;}
+    .tbar .hbar{flex:1;height:12px;background:var(--soft);border-radius:6px;overflow:hidden;}
+    .tbar .hbar i{display:block;height:100%;background:var(--primary2);}
+    .tbar .tc{flex:0 0 30px;text-align:right;font-weight:bold;color:var(--primary);}
+    .yearnav{display:inline-flex;align-items:center;gap:8px;margin-left:6px;font-size:14px;}
+    .yearnav button{border:1px solid var(--line);background:#fff;border-radius:6px;width:26px;height:26px;cursor:pointer;font-weight:bold;}
+    .sevwrap{display:flex;gap:12px;flex-wrap:wrap;}
+    .sevbox{flex:1 1 130px;border-radius:8px;padding:14px;color:#fff;text-align:center;}
+    .sevbox .sn{font-size:26px;font-weight:bold;}
+    .sevbox .sl{font-size:12px;opacity:.95;}
+    .recent .rec{cursor:pointer;}
+
+    .editor-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px;}
+    .editor-head h2{margin:0;color:var(--primary);font-size:19px;flex:1;}
+    .saved-flag{font-size:12px;color:var(--ok);}
+    .saved-flag.draft{color:var(--warn);}
+    .form{background:#fff;border:1px solid var(--line);border-radius:10px;padding:22px 24px;max-width:920px;}
+    .sect{font-weight:bold;color:var(--primary);border-bottom:1px solid var(--line);padding-bottom:5px;margin:22px 0 12px;font-size:14.5px;text-transform:uppercase;letter-spacing:.4px;}
+    .sect:first-child{margin-top:0;}
+    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px 18px;}
+    .fld{display:flex;flex-direction:column;gap:4px;margin-bottom:4px;}
+    .fld.full{grid-column:1/-1;}
+    .fld label{font-size:12.5px;font-weight:bold;color:var(--muted);}
+    .fld input,.fld textarea,.fld select{border:1px solid var(--line);border-radius:6px;padding:8px 10px;font-size:13.5px;font-family:inherit;width:100%;}
+    .fld textarea{min-height:64px;resize:vertical;}
+    .fld input:focus,.fld textarea:focus,.fld select:focus{outline:none;border-color:var(--primary2);box-shadow:0 0 0 2px rgba(46,91,136,.15);}
+
+    /* list editor */
+    .listbox{border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-bottom:6px;}
+    table.le{width:100%;border-collapse:collapse;font-size:13px;}
+    table.le th{background:var(--soft);color:var(--primary);text-align:left;padding:7px 8px;font-size:12px;border-bottom:1px solid var(--line);}
+    table.le td{padding:5px 6px;border-bottom:1px solid var(--line);vertical-align:top;}
+    table.le input,table.le textarea{width:100%;border:1px solid var(--line);border-radius:5px;padding:5px 7px;font-size:12.5px;font-family:inherit;}
+    table.le textarea{min-height:34px;resize:vertical;}
+    .rowdel{border:none;background:transparent;color:var(--accent);font-size:16px;font-weight:bold;}
+    .addrow{margin:8px;}
+
+    /* matrix */
+    .mwrap{overflow-x:auto;border:1px solid var(--line);border-radius:8px;}
+    table.mx{border-collapse:collapse;font-size:11.5px;min-width:980px;width:100%;}
+    table.mx th,table.mx td{border:1px solid var(--line);padding:4px 5px;}
+    table.mx thead th{background:var(--primary);color:#fff;text-align:center;position:sticky;top:0;}
+    table.mx td.item input,table.mx td input{width:100%;border:1px solid transparent;background:transparent;font-size:11.5px;padding:3px;font-family:inherit;border-radius:4px;}
+    table.mx td.item input:focus,table.mx td input:focus{border-color:var(--primary2);background:#fff;outline:none;}
+    .mcell{width:30px;text-align:center;cursor:pointer;user-select:none;font-weight:bold;}
+    .mcell.kh{color:var(--primary2);}
+    .mcell.th{color:var(--ok);background:#eaf6ee;}
+    .matrix-hint{font-size:11.5px;color:var(--muted);margin:6px 0;}
+
+    /* images */
+    .uploadbtn{display:inline-flex;align-items:center;gap:6px;border:1px dashed var(--primary2);color:var(--primary);background:var(--soft);border-radius:8px;padding:9px 16px;font-size:13px;font-weight:bold;cursor:pointer;margin-bottom:12px;}
+    .uploadbtn:hover{background:#e8f0fa;}
+    .thumbgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;}
+    .thumb{border:1px solid var(--line);border-radius:8px;overflow:hidden;position:relative;background:#fff;}
+    .thumb img{width:100%;height:122px;object-fit:cover;display:block;background:#f0f0f0;}
+    .thumb input{width:100%;border:none;border-top:1px solid var(--line);padding:6px 8px;font-size:12px;font-family:inherit;}
+    .thumb input:focus{outline:none;background:var(--soft);}
+    .thdel{position:absolute;top:6px;right:6px;border:none;background:rgba(192,57,43,.92);color:#fff;border-radius:50%;width:24px;height:24px;font-weight:bold;cursor:pointer;line-height:1;}
+    .thdel:hover{background:var(--accent);}
+    .thumb img{cursor:zoom-in;}
+    .imgs{border:2px dashed transparent;border-radius:10px;padding:6px;transition:.15s;}
+    .imgs.dzover{border-color:var(--primary2);background:var(--soft);}
+    .dzhint{font-size:11.5px;color:var(--muted);margin-left:8px;}
+    .imgs.dzover .dzhint{color:var(--primary2);font-weight:bold;}
+
+    /* lightbox */
+    .lb{display:none;position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:100;align-items:center;justify-content:center;}
+    .lb.open{display:flex;}
+    #lbImg{max-width:90vw;max-height:82vh;background:#fff;box-shadow:0 6px 40px rgba(0,0,0,.6);}
+    .lb-close{position:absolute;top:14px;right:20px;font-size:26px;line-height:1;background:none;border:none;color:#fff;cursor:pointer;}
+    .lb-nav{position:absolute;top:50%;transform:translateY(-50%);font-size:40px;background:rgba(255,255,255,.12);border:none;color:#fff;cursor:pointer;width:52px;height:80px;border-radius:8px;}
+    .lb-nav:hover{background:rgba(255,255,255,.25);}
+    .lb-prev{left:18px;} .lb-next{right:18px;}
+    .lb-cap{position:absolute;bottom:18px;left:0;right:0;text-align:center;color:#fff;font-size:14px;padding:0 70px;}
+    #lbCounter{opacity:.75;margin-right:8px;}
+
+    .editor-foot{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px;max-width:920px;}
+
+    .toast{position:fixed;bottom:20px;right:20px;background:var(--primary);color:#fff;padding:11px 16px;border-radius:8px;font-size:13px;box-shadow:0 4px 14px rgba(0,0,0,.2);opacity:0;transform:translateY(10px);transition:.25s;z-index:50;}
+    .toast.show{opacity:1;transform:none;}
+
+    /* ===== Print area ===== */
+    #print-root{display:none;}
+    @media print{
+        body *{visibility:hidden;}
+        #print-root,#print-root *{visibility:visible;}
+        #print-root{display:block;position:absolute;left:0;top:0;width:100%;}
+        @page{margin:14mm;}
+    }
+    /* print document styling (also used on-screen preview none) */
+    .pdoc{font-family:"Times New Roman",serif;color:#000;font-size:14px;line-height:1.55;}
+    .pdoc .ptop{width:100%;border-collapse:collapse;margin-bottom:6px;}
+    .pdoc .ptop td{vertical-align:top;text-align:center;font-size:13.5px;padding:0;}
+    .pdoc .org{font-weight:bold;text-transform:uppercase;}
+    .pdoc .rule{display:inline-block;border-bottom:1px solid #000;width:55%;margin:3px 0 6px;}
+    .pdoc h1{text-align:center;font-size:18px;text-transform:uppercase;margin:24px 0 2px;}
+    .pdoc .psub{text-align:center;font-style:italic;margin:0 0 18px;}
+    .pdoc h3{font-size:14.5px;color:#1b365d;margin:16px 0 6px;}
+    .pdoc p{margin:6px 0;text-align:justify;}
+    .pdoc table.pg{width:100%;border-collapse:collapse;margin:10px 0;font-size:13px;}
+    .pdoc table.pg th,.pdoc table.pg td{border:1px solid #333;padding:6px 7px;vertical-align:top;}
+    .pdoc table.pg th{background:#e9eef5;text-align:center;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+    .pdoc .psign{width:100%;margin-top:30px;border-collapse:collapse;}
+    .pdoc .psign td{text-align:center;vertical-align:top;font-size:13.5px;}
+    .pdoc .psign .role{font-weight:bold;text-transform:uppercase;}
+    .pdoc .psign .hint{font-style:italic;}
+    .pdoc .psign .sp{height:78px;}
+    .pdoc .mxp{border-collapse:collapse;width:100%;font-size:11px;}
+    .pdoc .mxp th,.pdoc .mxp td{border:1px solid #333;padding:3px 4px;text-align:center;}
+    .pdoc .mxp th{background:#1b365d;color:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+    .pdoc .mxp td.l{text-align:left;}
+
+    @media (max-width:820px){
+        body{font-size:13.5px;}
+        .topbar{padding:10px 12px;gap:8px;}
+        .topbar h1{font-size:14px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+        .topbar .sub{display:none;}
+        .topbar .btn.sm,.rolesel,.userchip{padding:6px 8px;font-size:11.5px;}
+        .menubtn{display:inline-flex;align-items:center;}
+        .layout{flex-direction:column;}
+        .sidebar{width:100%;flex:none;border-right:none;border-bottom:1px solid var(--line);display:none;max-height:62vh;overflow-y:auto;}
+        body.sb-open .sidebar{display:block;}
+        .main{padding:16px 14px;}
+        .grid2{grid-template-columns:1fr;}
+        .form{padding:16px 14px;}
+        .editor-head h2{font-size:16px;}
+        .gbanner{flex-direction:column;align-items:flex-start;gap:8px;}
+        .gbanner button{margin-left:0;}
+        .tbar .tn{flex-basis:120px;}
+        .login-box,.pk-box{padding:22px 18px;}
+    }
+    @media (max-width:480px){
+        .topbar h1{font-size:13px;}
+        .editor-foot .btn{font-size:12px;}
+        .stat .n{font-size:22px;}
+        .cards,.mcards{grid-template-columns:1fr;}
+    }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+    <button id="menuBtn" class="menubtn" onclick="toggleSidebar()" title="Menu">☰</button>
+    <div class="logo">PCCC</div>
+    <h1>Quản lý Hồ sơ An toàn - PCCC<span class="sub">Công ty VFM &amp; DQH — dữ liệu lưu trên máy (IndexedDB + sao lưu JSON)</span></h1>
+    <div class="spacer"></div>
+    <button id="syncBtn" class="btn ghost sm" style="display:none" onclick="syncNow(true)" title="Đồng bộ với server">☁ Đồng bộ</button>
+    <button id="userChip" class="userchip" style="display:none" onclick="showLogin()" title="Đổi người dùng"></button>
+    <select id="roleSel" class="rolesel" onchange="setRole(this.value)" title="Chế độ xem theo vai trò">
+        <option value="manager">👷 Đội trưởng / Quản lý</option>
+        <option value="member">🧑‍🚒 Thành viên</option>
+    </select>
+    <button class="btn ghost sm" onclick="exportAll()">⬇ Xuất JSON</button>
+    <button id="importBtn" class="btn ghost sm" onclick="document.getElementById('importFile').click()">⬆ Nhập JSON</button>
+    <input type="file" id="importFile" accept="application/json,.json" style="display:none" onchange="importAll(this)">
+</div>
+
+<div class="layout">
+    <aside class="sidebar">
+        <button class="btn ghost block" style="margin-bottom:8px" onclick="showDashboard()">📊 Bảng tổng quan</button>
+        <button class="btn ghost block" style="margin-bottom:8px" onclick="showGuide()">📖 Hướng dẫn &amp; Nhiệm vụ</button>
+        <a id="adminLink" href="admin.html" target="_blank" class="btn ghost block" style="display:none;margin-bottom:10px;text-decoration:none;text-align:center">⚙ Trang quản trị</a>
+        <div class="new-wrap">
+            <button class="btn block" onclick="toggleNewMenu(event)">＋ Tạo hồ sơ mới ▾</button>
+            <div class="new-menu" id="newMenu"></div>
+        </div>
+        <input class="search" id="search" placeholder="🔎 Tìm theo tiêu đề..." oninput="renderList()">
+        <div class="filters" id="filters"></div>
+        <div id="list"></div>
+    </aside>
+    <main class="main" id="main"></main>
+</div>
+
+<div id="print-root"></div>
+
+<div id="lightbox" class="lb" onclick="lbBackdrop(event)">
+    <button class="lb-close" title="Đóng (Esc)" onclick="closeLightbox()">✕</button>
+    <button class="lb-nav lb-prev" title="Ảnh trước (←)" onclick="lbNav(-1,event)">‹</button>
+    <img id="lbImg" src="" alt="">
+    <button class="lb-nav lb-next" title="Ảnh sau (→)" onclick="lbNav(1,event)">›</button>
+    <div class="lb-cap"><span id="lbCounter"></span><span id="lbCaption"></span></div>
+</div>
+
+<div id="login" class="login"></div>
+<div id="picker" class="login"></div>
+<div class="toast" id="toast"></div>
+
+<script src="pccc_members.js"></script>
+<script>
+/* =========================================================
+   PCCC App — single-file, offline. Data in localStorage,
+   import/export as JSON, print to PDF.
+========================================================= */
+const STORE_KEY = "pccc_app_v1";
+const MONTHS = [1,2,3,4,5,6,7,8,9,10,11,12];
+
+function esc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+function nl2br(s){return esc(s).replace(/\n/g,"<br>");}
+function uid(){return "r"+Date.now().toString(36)+Math.random().toString(36).slice(2,7);}
+function todayISO(){const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
+function nowYear(){return new Date().getFullYear();}
+function fmtDate(iso){if(!iso)return "—";const p=iso.split("-");return p.length===3?(p[2]+"/"+p[1]+"/"+p[0]):iso;}
+
+/* ---------- default annual items ---------- */
+function monthsByFreq(freq){
+    const f={};MONTHS.forEach(m=>f[m]="");
+    const set=(arr)=>arr.forEach(m=>f[m]="KH");
+    if(freq==="Tháng 1 lần"||freq==="Theo Checksheet") set([1,2,3,4,5,6,7,8,9,10,11,12]);
+    else if(freq==="Năm 4 lần") set([3,6,9,12]);
+    else if(freq==="6 tháng 1 lần") set([6,12]);
+    return f;
+}
+const DEFAULT_ITEMS=[
+ ["Lịch phân công kiểm tra phương tiện chữa cháy","Năm 1 lần","","Đội PCCC"],
+ ["Kiểm tra bình chữa cháy","Tháng 1 lần","","Đội PCCC"],
+ ["Kiểm tra thiết bị chữa cháy (Máy bơm, vòi, bể chứa nước)","Theo Checksheet","","Đội PCCC"],
+ ["Nạp và kiểm định bình chữa cháy","6 tháng 1 lần","Công ty dịch vụ","Phòng Thu mua"],
+ ["Kiểm định hệ thống chống sét, tiếp đất","Năm 1 lần","Công ty dịch vụ","Phòng hành chính"],
+ ["Cập nhật danh sách đội chữa cháy nội bộ","Khi phát sinh","","Phòng hành chính"],
+ ["Cập nhật danh sách phương tiện chữa cháy","Khi phát sinh","","Phòng hành chính"],
+ ["Cập nhật danh sách đội sơ cấp cứu","Khi phát sinh","","Phòng hành chính"],
+ ["Cập nhật Sơ đồ thoát hiểm nội bộ","Khi phát sinh","","Phòng hành chính"],
+ ["Đào tạo khái quát về PCCC nội bộ","Khi có nhân viên mới","","Phòng hành chính"],
+ ["Hướng dẫn nghiệp vụ cho thành viên đội chữa cháy nội bộ","Năm 1 lần","CA PCCC","Đội trưởng PCCC"],
+ ["Cập nhật phương án chữa cháy","Khi phát sinh","CA PCCC","Phòng hành chính"],
+ ["Diễn tập phương án chữa cháy","Năm 1 lần","CA PCCC","Toàn thể CNV"],
+ ["Huấn luyện đội chữa cháy nội bộ","Năm 4 lần","Đội trưởng PCCC","Đội PCCC"],
+ ["Báo cáo nội dung diễn tập cho CA PCCC","Khi phát sinh","","Phòng HC, Đội CC"],
+ ["Tự kiểm tra an toàn PCCC","Năm 4 lần","","Đội trưởng PCCC"],
+ ["Kiểm tra hoạt động của hệ thống báo khói","6 tháng 1 lần","","Đội trưởng PCCC"],
+ ["Bảo trì, bảo dưỡng hệ thống báo cháy tự động","2 năm 1 lần","Công ty dịch vụ","Đội PCCC"],
+];
+function defaultMatrixItems(){
+    return DEFAULT_ITEMS.map(([hangMuc,tanSuat,benNgoai,noiBo])=>({hangMuc,tanSuat,benNgoai,noiBo,months:monthsByFreq(tanSuat)}));
+}
+
+/* =========================================================
+   SCHEMAS
+========================================================= */
+const TYPES = {
+  huanluyen:{
+    label:"Biên bản huấn luyện", icon:"📋", code:"BB-PCCC",
+    printTitle:"BIÊN BẢN HUẤN LUYỆN NGHIỆP VỤ PCCC",
+    subtitle:"(Huấn luyện nội bộ về nghiệp vụ PCCC & cách sử dụng thiết bị)",
+    signs:[["Thư ký","(Ký, ghi rõ họ tên)"],["Người chủ trì / Hướng dẫn","(Ký, ghi rõ họ tên)"]],
+    title:d=>"Biên bản huấn luyện — "+fmtDate(d.ngay),
+    fields:[
+      {s:"Thông tin chung"},
+      {n:"donVi",l:"Đơn vị",t:"select",o:["VFM","DQH"],def:"VFM"},
+      {n:"soBienBan",l:"Số biên bản",t:"text",ph:"…/BB-PCCC"},
+      {n:"ngay",l:"Ngày lập",t:"date",def:todayISO},
+      {n:"diaDiem",l:"Địa điểm",t:"text"},
+      {n:"gioBatDau",l:"Giờ bắt đầu",t:"time"},
+      {n:"gioKetThuc",l:"Giờ kết thúc",t:"time"},
+      {n:"chuTri",l:"Người chủ trì / hướng dẫn",t:"text"},
+      {n:"thuKy",l:"Thư ký",t:"text"},
+      {s:"Nội dung & kết quả"},
+      {n:"noiDung",l:"Nội dung huấn luyện",t:"textarea",full:true,def:"1. Phổ biến kiến thức pháp luật, nội quy an toàn PCCC.\n2. Hướng dẫn nhận biết nguy cơ cháy nổ tại khu vực làm việc.\n3. Hướng dẫn sử dụng phương tiện chữa cháy tại chỗ.\n4. Quy trình báo cháy, thoát nạn và xử lý sự cố ban đầu."},
+      {n:"ketQua",l:"Kết quả & đánh giá",t:"textarea",full:true},
+      {s:"Danh sách tham dự & ký nhận bồi dưỡng (100.000đ/người/lần)"},
+      {n:"thanhVien",l:"",t:"list",member:{hoTen:"name",mnv:"msnv",boPhan:"department"},cols:[
+        {n:"hoTen",l:"Họ và tên"},{n:"mnv",l:"MNV",w:"90px"},{n:"boPhan",l:"Bộ phận"},
+        {n:"boiDuong",l:"Bồi dưỡng (đồng)",w:"120px",def:"100.000"}
+      ]},
+      {s:"Hình ảnh bằng chứng"},
+      {n:"hinhAnh",l:"",t:"images"},
+    ]
+  },
+  dientap:{
+    label:"Biên bản diễn tập", icon:"🧯", code:"BB-DT",
+    printTitle:"BIÊN BẢN DIỄN TẬP PHƯƠNG ÁN PCCC & CNCH",
+    subtitle:"(Diễn tập phương án phòng cháy chữa cháy và cứu nạn, cứu hộ)",
+    signs:[["Thư ký","(Ký, ghi rõ họ tên)"],["Đơn vị phối hợp / Giám sát","(Ký, ghi rõ họ tên)"],["Chỉ huy diễn tập","(Ký, ghi rõ họ tên)"]],
+    title:d=>"Biên bản diễn tập — "+fmtDate(d.ngay),
+    fields:[
+      {s:"Thông tin chung"},
+      {n:"donVi",l:"Đơn vị",t:"select",o:["VFM","DQH"],def:"VFM"},
+      {n:"soBienBan",l:"Số biên bản",t:"text",ph:"…/BB-DT"},
+      {n:"ngay",l:"Ngày diễn tập",t:"date",def:todayISO},
+      {n:"gio",l:"Giờ",t:"time"},
+      {n:"diaDiem",l:"Địa điểm",t:"text"},
+      {n:"hinhThuc",l:"Hình thức",t:"select",o:["Phối hợp Cơ quan Công an PCCC","Tự thực tập nội bộ"]},
+      {n:"chiHuy",l:"Chỉ huy diễn tập",t:"text"},
+      {n:"phoiHop",l:"Đơn vị phối hợp / giám sát",t:"text"},
+      {s:"Tình huống & lực lượng"},
+      {n:"tinhHuong",l:"Tình huống giả định",t:"textarea",full:true},
+      {n:"lucLuong",l:"Lực lượng, phương tiện huy động",t:"textarea",full:true},
+      {s:"Diễn biến diễn tập"},
+      {n:"dienBien",l:"",t:"list",cols:[
+        {n:"thoiDiem",l:"Thời điểm",w:"110px"},{n:"thaoTac",l:"Tình huống / Thao tác"},{n:"luc",l:"Lực lượng thực hiện",w:"180px"}
+      ]},
+      {s:"Đánh giá"},
+      {n:"uuDiem",l:"Ưu điểm",t:"textarea",full:true},
+      {n:"tonTai",l:"Tồn tại, hạn chế",t:"textarea",full:true},
+      {n:"kienNghi",l:"Kiến nghị, khắc phục",t:"textarea",full:true},
+      {s:"Hình ảnh bằng chứng"},
+      {n:"hinhAnh",l:"",t:"images"},
+    ]
+  },
+  hop:{
+    label:"Biên bản họp ATVSV", icon:"👥", code:"BB-ATVSV",
+    printTitle:"BIÊN BẢN HỌP ĐỊNH KỲ MẠNG LƯỚI ATVSV",
+    subtitle:"(Họp đánh giá hoạt động an toàn - vệ sinh viên định kỳ)",
+    signs:[["Thư ký","(Ký, ghi rõ họ tên)"],["Chủ trì cuộc họp","(Ký, ghi rõ họ tên)"]],
+    title:d=>"Họp ATVSV tháng "+(d.thang||"…")+"/"+(d.nam||"…")+" ("+(d.donVi||"")+")",
+    fields:[
+      {s:"Thông tin chung"},
+      {n:"donVi",l:"Đơn vị",t:"select",o:["VFM","DQH"],def:"VFM"},
+      {n:"soBienBan",l:"Số biên bản",t:"text",ph:"…/BB-ATVSV"},
+      {n:"thang",l:"Kỳ họp tháng",t:"number",ph:"1-12"},
+      {n:"nam",l:"Năm",t:"number",def:nowYear},
+      {n:"ngay",l:"Ngày họp",t:"date",def:todayISO},
+      {n:"gio",l:"Giờ",t:"time"},
+      {n:"diaDiem",l:"Địa điểm",t:"text"},
+      {n:"chuTri",l:"Chủ trì",t:"text"},
+      {n:"thuKy",l:"Thư ký",t:"text"},
+      {n:"soThamDu",l:"Số thành viên tham dự",t:"text",ph:"vd: 8/10"},
+      {s:"Nội dung cuộc họp"},
+      {n:"danhGia",l:"1. Đánh giá hoạt động an toàn - PCCC trong kỳ",t:"textarea",full:true},
+      {n:"khoKhan",l:"2. Khó khăn, vướng mắc & nguy cơ phát hiện",t:"textarea",full:true},
+      {n:"deXuat",l:"3. Đề xuất, kiến nghị",t:"textarea",full:true},
+      {s:"Kết luận & phân công"},
+      {n:"phanCong",l:"",t:"list",cols:[
+        {n:"noiDung",l:"Nội dung công việc"},{n:"nguoi",l:"Người thực hiện",w:"180px",pick:"name"},{n:"thoiHan",l:"Thời hạn",w:"120px"}
+      ]},
+      {s:"Hình ảnh bằng chứng"},
+      {n:"hinhAnh",l:"",t:"images"},
+    ]
+  },
+  kehoach:{
+    label:"Kế hoạch triển khai", icon:"📝", code:"KH-PCCC",
+    printTitle:"KẾ HOẠCH TRIỂN KHAI CÔNG TÁC AN TOÀN - PCCC",
+    subtitle:"",
+    signs:[["Người lập kế hoạch","(Ký, ghi rõ họ tên)"],["Phê duyệt - Lãnh đạo đơn vị","(Ký, đóng dấu)"]],
+    title:d=>"Kế hoạch triển khai PCCC năm "+(d.nam||"…")+" ("+(d.donVi||"")+")",
+    fields:[
+      {s:"Thông tin chung"},
+      {n:"donVi",l:"Đơn vị",t:"select",o:["VFM","DQH"],def:"VFM"},
+      {n:"soKeHoach",l:"Số kế hoạch",t:"text",ph:"…/KH-PCCC"},
+      {n:"nam",l:"Năm",t:"number",def:nowYear},
+      {n:"ngay",l:"Ngày lập",t:"date",def:todayISO},
+      {s:"Căn cứ & mục đích"},
+      {n:"canCu",l:"Căn cứ xây dựng kế hoạch",t:"textarea",full:true,def:"- Luật PCCC & CNCH và các văn bản hướng dẫn (NĐ 136/2020/NĐ-CP, NĐ 50/2024/NĐ-CP và Thông tư liên quan).\n- Nội quy, quy định an toàn - PCCC đã được phê duyệt của đơn vị."},
+      {n:"mucDich",l:"Mục đích - yêu cầu",t:"textarea",full:true,def:"1. Bảo đảm an toàn về người, tài sản; chủ động phòng ngừa, sẵn sàng ứng phó sự cố.\n2. Kiện toàn lực lượng PCCC & mạng lưới ATVSV; duy trì huấn luyện, diễn tập định kỳ.\n3. Quản lý hồ sơ, thiết bị PCCC đầy đủ, đúng quy định."},
+      {s:"Nội dung triển khai"},
+      {n:"noiDung",l:"",t:"list",cols:[
+        {n:"viec",l:"Nội dung công việc"},{n:"thoiGian",l:"Thời gian/Tần suất",w:"130px"},{n:"nguoi",l:"Người thực hiện",w:"150px",pick:"name"},{n:"ketQua",l:"Kết quả/Bằng chứng",w:"140px"}
+      ]},
+      {s:"Kinh phí & tổ chức"},
+      {n:"kinhPhi",l:"Kinh phí thực hiện",t:"textarea",full:true,def:"- Hỗ trợ huấn luyện nội bộ: 100.000 đồng/người/lần.\n- Hỗ trợ Cơ quan Công an huấn luyện: 150.000 đồng/người/lần.\n- Chi phí bảo dưỡng, nạp sạc thiết bị: theo thực tế."},
+      {n:"toChuc",l:"Tổ chức thực hiện",t:"textarea",full:true},
+    ]
+  },
+  hoatdong:{
+    label:"Hoạt động PCCC năm", icon:"📅", code:"HD-PCCC",
+    printTitle:"HOẠT ĐỘNG PCCC NĂM",
+    subtitle:"Kế hoạch & theo dõi thực hiện công tác PCCC theo tháng",
+    signs:[["Người lập","(Ký, ghi rõ họ tên)"],["Xác nhận","(Ký, ghi rõ họ tên)"],["Phê duyệt","(Ký, đóng dấu)"]],
+    title:d=>"Hoạt động PCCC năm "+(d.nam||"…")+" ("+(d.donVi||"")+")",
+    fields:[
+      {s:"Thông tin chung"},
+      {n:"donVi",l:"Đơn vị",t:"select",o:["VFM","DQH"],def:"VFM"},
+      {n:"nam",l:"Năm",t:"number",def:nowYear},
+      {n:"maTaiLieu",l:"Mã tài liệu",t:"text"},
+      {n:"ngay",l:"Ngày lập",t:"date",def:todayISO},
+      {s:"Bảng hoạt động theo tháng"},
+      {n:"items",l:"",t:"matrix"},
+    ]
+  },
+  sucos:{
+    label:"Phiếu báo cáo sự cố / nguy cơ", icon:"⚠️", code:"SC-PCCC",
+    printTitle:"PHIẾU BÁO CÁO SỰ CỐ / NGUY CƠ MẤT AN TOÀN PCCC",
+    subtitle:"(Mọi thành viên báo cáo ngay khi phát hiện sự cố hoặc nguy cơ)",
+    signs:[["Người báo cáo","(Ký, ghi rõ họ tên)"],["Đội trưởng PCCC tiếp nhận","(Ký, ghi rõ họ tên)"]],
+    title:d=>"Báo cáo sự cố/nguy cơ — "+fmtDate(d.ngay),
+    fields:[
+      {s:"Thông tin người báo cáo"},
+      {n:"donVi",l:"Đơn vị",t:"select",o:["VFM","DQH"],def:"VFM"},
+      {n:"soVanBan",l:"Số phiếu",t:"text"},
+      {n:"nguoiBaoCao",l:"Người báo cáo",t:"text"},
+      {n:"boPhan",l:"Bộ phận",t:"text"},
+      {n:"ngay",l:"Ngày phát hiện",t:"date",def:todayISO},
+      {n:"gio",l:"Giờ",t:"time"},
+      {n:"viTri",l:"Vị trí / Khu vực",t:"text"},
+      {s:"Nội dung sự cố / nguy cơ"},
+      {n:"loai",l:"Loại",t:"select",o:["Sự cố cháy, nổ","Nguy cơ mất an toàn cháy nổ","Thiết bị PCCC hư hỏng","Vi phạm quy định an toàn","Khác"]},
+      {n:"mucDo",l:"Mức độ",t:"select",o:["Nhẹ","Trung bình","Nghiêm trọng"]},
+      {n:"moTa",l:"Mô tả sự việc",t:"textarea",full:true},
+      {n:"xuLy",l:"Xử lý ban đầu đã thực hiện",t:"textarea",full:true},
+      {n:"deXuat",l:"Đề xuất / Kiến nghị",t:"textarea",full:true},
+      {s:"Hình ảnh hiện trường"},
+      {n:"hinhAnh",l:"",t:"images"},
+    ]
+  },
+  kiemtra:{
+    label:"Phiếu kiểm tra thiết bị PCCC", icon:"🔧", code:"KT-PCCC",
+    printTitle:"PHIẾU KIỂM TRA - BẢO DƯỠNG THIẾT BỊ PCCC ĐỊNH KỲ",
+    subtitle:"(Đội viên kiểm tra luân phiên; Đội trưởng xác nhận cuối kỳ)",
+    signs:[["Người kiểm tra","(Ký, ghi rõ họ tên)"],["Đội trưởng PCCC xác nhận","(Ký, ghi rõ họ tên)"]],
+    title:d=>"Kiểm tra thiết bị PCCC — "+fmtDate(d.ngay),
+    fields:[
+      {s:"Thông tin chung"},
+      {n:"donVi",l:"Đơn vị",t:"select",o:["VFM","DQH"],def:"VFM"},
+      {n:"soVanBan",l:"Số phiếu",t:"text"},
+      {n:"ngay",l:"Ngày kiểm tra",t:"date",def:todayISO},
+      {n:"ky",l:"Kỳ kiểm tra",t:"text",ph:"vd: Tháng 6/2026"},
+      {n:"khuVuc",l:"Khu vực",t:"text"},
+      {n:"nguoiKiemTra",l:"Người kiểm tra",t:"text"},
+      {s:"Danh mục kiểm tra (ghi Đạt / Không đạt)"},
+      {n:"thietBi",l:"",t:"list",cols:[
+        {n:"ten",l:"Thiết bị / Hạng mục"},{n:"viTri",l:"Vị trí",w:"120px"},{n:"tinhTrang",l:"Tình trạng",w:"100px"},{n:"bienPhap",l:"Biện pháp xử lý",w:"170px"}
+      ],rows:[
+        {ten:"Bình chữa cháy xách tay (bột/CO₂)",viTri:"",tinhTrang:"Đạt",bienPhap:""},
+        {ten:"Trụ/họng nước vách tường, van, vòi, lăng",viTri:"",tinhTrang:"Đạt",bienPhap:""},
+        {ten:"Hệ thống bơm chữa cháy, bể chứa nước",viTri:"Phòng bơm",tinhTrang:"Đạt",bienPhap:""},
+        {ten:"Hệ thống chữa cháy tự động (Sprinkler), tủ điện",viTri:"",tinhTrang:"Đạt",bienPhap:""},
+        {ten:"Tủ trung tâm báo cháy",viTri:"",tinhTrang:"Đạt",bienPhap:""},
+        {ten:"Đầu báo khói / báo nhiệt / Beam",viTri:"",tinhTrang:"Đạt",bienPhap:""},
+        {ten:"Nút ấn khẩn cấp, chuông báo cháy",viTri:"",tinhTrang:"Đạt",bienPhap:""},
+        {ten:"Đèn báo cháy / đèn chiếu sáng sự cố",viTri:"",tinhTrang:"Đạt",bienPhap:""},
+        {ten:"Đèn Exit chỉ dẫn thoát nạn",viTri:"",tinhTrang:"Đạt",bienPhap:""},
+        {ten:"Nội quy, tiêu lệnh, biển báo PCCC",viTri:"",tinhTrang:"Đạt",bienPhap:""},
+        {ten:"Lối thoát nạn, cửa thoát hiểm thông thoáng",viTri:"",tinhTrang:"Đạt",bienPhap:""},
+        {ten:"Sơ đồ thoát hiểm",viTri:"",tinhTrang:"Đạt",bienPhap:""},
+      ]},
+      {s:"Kết luận"},
+      {n:"ketLuan",l:"Kết luận chung & kiến nghị",t:"textarea",full:true},
+      {s:"Hình ảnh"},
+      {n:"hinhAnh",l:"",t:"images"},
+    ]
+  },
+  baocao:{
+    label:"Báo cáo công tác PCCC", icon:"📊", code:"BC-PCCC",
+    printTitle:"BÁO CÁO CÔNG TÁC PCCC ĐỊNH KỲ",
+    subtitle:"",
+    signs:[["Người lập","(Ký, ghi rõ họ tên)"],["Phê duyệt","(Ký, đóng dấu)"]],
+    title:d=>"Báo cáo công tác PCCC "+(d.ky||"")+" "+(d.thoiGian||""),
+    fields:[
+      {s:"Thông tin chung"},
+      {n:"donVi",l:"Đơn vị",t:"select",o:["VFM","DQH"],def:"VFM"},
+      {n:"soVanBan",l:"Số báo cáo",t:"text"},
+      {n:"ky",l:"Kỳ báo cáo",t:"select",o:["Tháng","Quý","6 tháng","Năm","Đột xuất"]},
+      {n:"thoiGian",l:"Thời gian",t:"text",ph:"vd: Tháng 6/2026"},
+      {n:"ngay",l:"Ngày lập",t:"date",def:todayISO},
+      {n:"nguoiLap",l:"Người lập",t:"text"},
+      {s:"Số liệu hoạt động"},
+      {n:"soLieu",l:"",t:"list",cols:[
+        {n:"chiTieu",l:"Chỉ tiêu"},{n:"soLuong",l:"Số lượng",w:"110px"},{n:"ghiChu",l:"Ghi chú",w:"200px"}
+      ],rows:[
+        {chiTieu:"Số buổi huấn luyện nội bộ đã tổ chức",soLuong:"",ghiChu:""},
+        {chiTieu:"Số lần diễn tập PCCC & CNCH",soLuong:"",ghiChu:""},
+        {chiTieu:"Số lượt kiểm tra/bảo dưỡng thiết bị",soLuong:"",ghiChu:""},
+        {chiTieu:"Số bình chữa cháy kiểm tra/nạp sạc",soLuong:"",ghiChu:""},
+        {chiTieu:"Số sự cố/nguy cơ phát hiện",soLuong:"",ghiChu:""},
+        {chiTieu:"Số tồn tại đã khắc phục",soLuong:"",ghiChu:""},
+      ]},
+      {s:"Đánh giá"},
+      {n:"ketQua",l:"Kết quả đạt được",t:"textarea",full:true},
+      {n:"tonTai",l:"Tồn tại, hạn chế",t:"textarea",full:true},
+      {n:"keHoach",l:"Kế hoạch kỳ tiếp theo",t:"textarea",full:true},
+    ]
+  },
+  phancong:{
+    label:"Bảng phân công công việc", icon:"🗂️", code:"PC-PCCC",
+    printTitle:"BẢNG PHÂN CÔNG CÔNG VIỆC LIÊN QUAN PCCC",
+    subtitle:"",
+    signs:[["Người soạn","(Ký, ghi rõ họ tên)"],["Xác nhận","(Ký, ghi rõ họ tên)"],["Phê duyệt","(Ký, đóng dấu)"]],
+    title:d=>"Phân công công việc PCCC ("+(d.donVi||"")+")",
+    fields:[
+      {s:"Thông tin chung"},
+      {n:"donVi",l:"Đơn vị",t:"select",o:["VFM","DQH"],def:"VFM"},
+      {n:"soVanBan",l:"Số văn bản",t:"text"},
+      {n:"apDung",l:"Áp dụng từ",t:"text",ph:"vd: 06/2026"},
+      {n:"ngay",l:"Ngày lập",t:"date",def:todayISO},
+      {s:"Bảng phân công"},
+      {n:"congViec",l:"",t:"list",cols:[
+        {n:"noiDung",l:"Nội dung"},{n:"phuTrach",l:"Phụ trách",w:"150px",pick:"name"},{n:"tanSuat",l:"Tần suất",w:"130px"},{n:"khuVuc",l:"Khu vực",w:"110px"},{n:"ghiChu",l:"Ghi chú",w:"150px"}
+      ],rows:[
+        {noiDung:"Bảng phân công công việc",phuTrach:"Đội trưởng",tanSuat:"Khi có phát sinh",khuVuc:"",ghiChu:""},
+        {noiDung:"Đào tạo khái quát về PCCC nội bộ",phuTrach:"Phòng hành chính",tanSuat:"Khi có nhân viên mới",khuVuc:"",ghiChu:""},
+        {noiDung:"Hướng dẫn nghiệp vụ cho thành viên đội chữa cháy nội bộ",phuTrach:"Đội trưởng",tanSuat:"Khi có nhân viên mới",khuVuc:"",ghiChu:""},
+        {noiDung:"Kiểm tra bình phòng cháy",phuTrach:"Đội viên",tanSuat:"1 tháng/1 lần",khuVuc:"Toàn bộ nhà máy",ghiChu:""},
+        {noiDung:"Hệ thống đèn khẩn cấp",phuTrach:"Đội phó",tanSuat:"3 tháng/1 lần",khuVuc:"Toàn bộ nhà máy",ghiChu:""},
+        {noiDung:"Bảng Exit",phuTrach:"Đội phó",tanSuat:"3 tháng/1 lần",khuVuc:"Toàn bộ nhà máy",ghiChu:""},
+        {noiDung:"Kiểm tra thiết bị chữa cháy (Máy bơm, bể chứa nước...)",phuTrach:"Đội phó",tanSuat:"Theo checksheet",khuVuc:"Phòng bơm",ghiChu:"Đội viên kiểm tra luân phiên hàng tuần; Đội trưởng xác nhận cuối tháng"},
+        {noiDung:"Nạp và kiểm định bình chữa cháy",phuTrach:"Công ty dịch vụ / Đội phó",tanSuat:"1 năm/2 lần",khuVuc:"Toàn bộ nhà máy",ghiChu:""},
+        {noiDung:"Kiểm định hệ thống chống sét, tiếp đất",phuTrach:"Công ty dịch vụ / P. hành chính",tanSuat:"1 năm/1 lần",khuVuc:"",ghiChu:""},
+        {noiDung:"Cập nhật DS đội chữa cháy nội bộ",phuTrach:"Đội trưởng",tanSuat:"Khi có phát sinh",khuVuc:"",ghiChu:""},
+        {noiDung:"Cập nhật DS đội sơ cấp cứu",phuTrach:"Đội trưởng",tanSuat:"Khi có phát sinh",khuVuc:"",ghiChu:""},
+        {noiDung:"Cập nhật DS phương tiện chữa cháy",phuTrach:"Đội phó",tanSuat:"Khi có phát sinh",khuVuc:"",ghiChu:""},
+        {noiDung:"Cập nhật sơ đồ thoát hiểm nội bộ",phuTrach:"Phòng hành chính",tanSuat:"Khi có phát sinh",khuVuc:"Toàn bộ nhà máy",ghiChu:""},
+        {noiDung:"Cập nhật phương án chữa cháy, CNCH",phuTrach:"CA PCCC / Đội trưởng",tanSuat:"Khi có phát sinh",khuVuc:"Toàn bộ nhà máy",ghiChu:""},
+        {noiDung:"Huấn luyện đội PCCC",phuTrach:"CA PCCC",tanSuat:"1 năm/1 lần",khuVuc:"",ghiChu:"Theo luật hiện hành"},
+        {noiDung:"Diễn tập phương án chữa cháy, CNCH",phuTrach:"CA PCCC / Toàn thể CNV",tanSuat:"1 năm/1 lần",khuVuc:"",ghiChu:""},
+        {noiDung:"Báo cáo nội dung diễn tập cho CA PCCC",phuTrach:"Phòng hành chính",tanSuat:"1 năm/1 lần",khuVuc:"",ghiChu:""},
+        {noiDung:"Tự kiểm tra an toàn PCCC trước khi thanh tra",phuTrach:"Đội trưởng/Đội phó",tanSuat:"1 năm/1 lần",khuVuc:"Toàn bộ nhà máy",ghiChu:""},
+        {noiDung:"Đối ứng thanh tra của CA PCCC",phuTrach:"HCNS / Đội PCCC",tanSuat:"1 năm/1 lần",khuVuc:"",ghiChu:""},
+        {noiDung:"Báo cáo hoạt động PCCC hàng năm",phuTrach:"Đội trưởng",tanSuat:"1 năm/2 lần",khuVuc:"",ghiChu:""},
+        {noiDung:"Kiểm tra bảo trì Hệ thống PCCC định kỳ",phuTrach:"Công ty dịch vụ / Đội PCCC",tanSuat:"1 năm/2 lần",khuVuc:"Toàn bộ nhà máy",ghiChu:""},
+      ]},
+    ]
+  },
+  doivien:{
+    label:"Danh sách đội viên PCCC", icon:"🧑‍🚒", code:"DS-PCCC",
+    printTitle:"DANH SÁCH ĐỘI VIÊN PCCC & MẠNG LƯỚI ATVSV",
+    subtitle:"",
+    signs:[["Người lập","(Ký, ghi rõ họ tên)"],["Phê duyệt","(Ký, đóng dấu)"]],
+    title:d=>"Danh sách đội viên PCCC ("+(d.donVi||"")+")",
+    fields:[
+      {s:"Thông tin chung"},
+      {n:"donVi",l:"Đơn vị",t:"select",o:["VFM","DQH"],def:"VFM"},
+      {n:"diaChi",l:"Địa chỉ",t:"text"},
+      {n:"apDung",l:"Áp dụng từ / Năm",t:"text",ph:"vd: 06/2026"},
+      {n:"ngay",l:"Ngày lập",t:"date",def:todayISO},
+      {s:"Danh sách đội viên"},
+      {n:"thanhVien",l:"",t:"list",member:{hoTen:"name",msnv:"msnv",boPhan:"department",chucVu:"position"},cols:[
+        {n:"hoTen",l:"Họ và tên"},{n:"msnv",l:"MSNV",w:"90px"},{n:"boPhan",l:"Bộ phận",w:"120px"},{n:"chucVu",l:"Chức vụ",w:"120px"},{n:"sdt",l:"Điện thoại",w:"110px"}
+      ],rows:[
+        {hoTen:"Chu Văn Long",msnv:"002495",boPhan:"Bảo trì",chucVu:"Đội trưởng",sdt:""},
+        {hoTen:"Đỗ Hữu Thiện",msnv:"000719",boPhan:"Văn phòng",chucVu:"Đội phó",sdt:""},
+        {hoTen:"Hồ Đình Khương",msnv:"003558",boPhan:"Bảo trì (DQH)",chucVu:"Đội trưởng (DQH)",sdt:""},
+        {hoTen:"Trần Đức Bảo",msnv:"",boPhan:"IT",chucVu:"Đội viên",sdt:""},
+        {hoTen:"Khổng Thị Ái",msnv:"",boPhan:"Kho sơn",chucVu:"Đội viên",sdt:""},
+        {hoTen:"Huỳnh Phương Thúy",msnv:"",boPhan:"Kho ngũ kim",chucVu:"Đội viên",sdt:""},
+        {hoTen:"Lê Thị Ngọc Trân",msnv:"",boPhan:"Sơn",chucVu:"Đội viên",sdt:""},
+        {hoTen:"Nguyễn Văn Trọng",msnv:"",boPhan:"Thành phẩm",chucVu:"Đội viên",sdt:""},
+        {hoTen:"Lê Văn Chốt",msnv:"",boPhan:"Bảo trì",chucVu:"Đội viên",sdt:""},
+        {hoTen:"Nguyễn Trần Trung Hiếu",msnv:"",boPhan:"Bảo trì",chucVu:"Đội viên",sdt:""},
+      ]},
+    ]
+  },
+};
+const TYPE_ORDER=["sucos","kiemtra","baocao","huanluyen","dientap","hop","kehoach","hoatdong","phancong","doivien"];
+
+/* =========================================================
+   STATE & STORAGE
+========================================================= */
+let STATE={records:[],view:"welcome",current:null,filter:"all",editingId:null,dirty:false};
+function getRec(id){if(STATE.current&&STATE.current.id===id)return STATE.current;return STATE.records.find(r=>r.id===id);}
+/* ---- role-based view mode (lưu sở thích giao diện, không phải bảo mật) ---- */
+let ROLE = localStorage.getItem("pccc_role") || "manager";
+const MEMBER_TYPES = ["sucos","kiemtra","baocao"];
+function roleTypes(){return ROLE==="member"?MEMBER_TYPES:TYPE_ORDER;}
+function setRole(r){ROLE=r;localStorage.setItem("pccc_role",r);applyRoleUI();buildNewMenu();if(STATE.view==="edit"&&STATE.current&&ROLE==="member"&&!MEMBER_TYPES.includes(STATE.current.type)){STATE.view="welcome";STATE.current=null;}renderAll();toast(r==="member"?"Chế độ Thành viên":"Chế độ Đội trưởng / Quản lý");}
+function applyRoleUI(){
+    const sel=document.getElementById("roleSel");
+    const chip=document.getElementById("userChip");
+    if(MEMBERS){ // có file cấu hình -> vai trò theo người dùng đã chọn
+        if(sel)sel.style.display="none";
+        if(chip){chip.style.display="";chip.innerHTML=CURRENT_USER?("👤 "+esc(CURRENT_USER.name)+" · "+roleLabel(ROLE)+" ▾"):"👤 Chọn tên ▾";}
+    }else{ // không có cấu hình -> dùng nút chọn vai trò thủ công
+        if(sel){sel.style.display="";sel.value=ROLE;}
+        if(chip)chip.style.display="none";
+    }
+    const imp=document.getElementById("importBtn");if(imp)imp.style.display=ROLE==="member"?"none":"";
+}
+let DASH_YEAR = nowYear();
+
+/* ---- Danh bạ thành viên & đăng nhập theo tên (cấu hình: pccc_members.js) ---- */
+let MEMBERS = (typeof window!=="undefined" && window.PCCC_MEMBERS && Array.isArray(window.PCCC_MEMBERS.members)) ? window.PCCC_MEMBERS.members : null;
+let CURRENT_USER = null;
+function roleLabel(r){return r==="member"?"Thành viên":"Đội trưởng / Quản lý";}
+function tryRestoreUser(){
+    try{const raw=localStorage.getItem("pccc_user");if(raw){const u=JSON.parse(raw);const m=MEMBERS.find(x=>x.name===u.name&&(x.msnv||"")===(u.msnv||""));if(m){CURRENT_USER=m;ROLE=(m.role==="manager")?"manager":"member";return true;}}}catch(e){}
+    return false;
+}
+function showLogin(){
+    if(!MEMBERS)return;
+    const byUnit={};
+    MEMBERS.forEach((m,i)=>{const u=m.unit||"Khác";(byUnit[u]=byUnit[u]||[]).push({m,i});});
+    let opts="";
+    Object.keys(byUnit).forEach(u=>{opts+=`<optgroup label="${esc(u)}">`+byUnit[u].map(({m,i})=>`<option value="${i}">${esc(m.name)}${m.department?" — "+esc(m.department):""}${m.position?" ("+esc(m.position)+")":""}</option>`).join("")+`</optgroup>`;});
+    const company=(window.PCCC_MEMBERS&&window.PCCC_MEMBERS.company)||"";
+    const hasCur=!!CURRENT_USER;
+    document.getElementById("login").innerHTML=`<div class="login-box">
+        <div class="logo">PCCC</div>
+        <h2>Hồ sơ An toàn - PCCC</h2>
+        <p>${esc(company)}</p>
+        <label>Chọn tên của bạn để bắt đầu</label>
+        <select id="loginSel" size="1">${opts}</select>
+        <button class="btn block" onclick="chooseUser(document.getElementById('loginSel').value)">Vào ứng dụng →</button>
+        ${hasCur?`<button class="btn ghost block" style="margin-top:8px" onclick="closeLogin()">Hủy</button>`:""}
+    </div>`;
+    if(hasCur){const idx=MEMBERS.indexOf(CURRENT_USER);const s=document.getElementById("loginSel");if(s&&idx>=0)s.value=idx;}
+    document.getElementById("login").classList.add("open");
+}
+function closeLogin(){document.getElementById("login").classList.remove("open");}
+function chooseUser(i){
+    i=parseInt(i);const m=MEMBERS[i];if(!m)return;
+    CURRENT_USER=m;ROLE=(m.role==="manager")?"manager":"member";
+    localStorage.setItem("pccc_user",JSON.stringify({name:m.name,msnv:m.msnv||""}));
+    closeLogin();applyRoleUI();buildNewMenu();
+    if(ROLE==="member"&&STATE.current&&!MEMBER_TYPES.includes(STATE.current.type)){STATE.current=null;STATE.view="welcome";}
+    renderAll();toast("Xin chào "+m.name+" — "+roleLabel(ROLE));
+}
+function applyUserDefaults(d){
+    if(!CURRENT_USER)return;
+    if(("donVi" in d)&&(CURRENT_USER.unit==="VFM"||CURRENT_USER.unit==="DQH"))d.donVi=CURRENT_USER.unit;
+    ["nguoiBaoCao","nguoiKiemTra","nguoiLap"].forEach(k=>{if((k in d)&&!d[k])d[k]=CURRENT_USER.name;});
+    if(("boPhan" in d)&&!d.boPhan)d.boPhan=CURRENT_USER.department||"";
+}
+
+/* ---------- IndexedDB storage (one record per row, scales far beyond localStorage) ---------- */
+const DB_NAME="pccc_db", DB_STORE="records";
+let _db=null;
+function idbOpen(){return new Promise((res,rej)=>{
+    const rq=indexedDB.open(DB_NAME,1);
+    rq.onupgradeneeded=e=>{const db=e.target.result;if(!db.objectStoreNames.contains(DB_STORE))db.createObjectStore(DB_STORE,{keyPath:"id"});};
+    rq.onsuccess=e=>{_db=e.target.result;res(_db);};
+    rq.onerror=e=>rej(e.target.error);
+});}
+function _store(mode){return _db.transaction(DB_STORE,mode).objectStore(DB_STORE);}
+function idbGetAll(){return new Promise((res,rej)=>{const rq=_store("readonly").getAll();rq.onsuccess=()=>res(rq.result||[]);rq.onerror=()=>rej(rq.error);});}
+function idbPut(rec){return new Promise((res,rej)=>{const rq=_store("readwrite").put(rec);rq.onsuccess=()=>res();rq.onerror=()=>rej(rq.error);});}
+function idbDel(id){return new Promise((res,rej)=>{const rq=_store("readwrite").delete(id);rq.onsuccess=()=>res();rq.onerror=()=>rej(rq.error);});}
+function idbClear(){return new Promise((res,rej)=>{const rq=_store("readwrite").clear();rq.onsuccess=()=>res();rq.onerror=()=>rej(rq.error);});}
+function idbBulk(recs){return new Promise((res,rej)=>{const tx=_db.transaction(DB_STORE,"readwrite");const st=tx.objectStore(DB_STORE);recs.forEach(r=>st.put(r));tx.oncomplete=()=>res();tx.onerror=()=>rej(tx.error);});}
+
+/* save a single record (async, fire-and-forget) */
+function persistRecord(rec){if(rec)idbPut(rec).catch(e=>console.warn("IDB put error",e));}
+/* rewrite the whole DB to match STATE.records (used by import) */
+function persistAll(){return idbClear().then(()=>idbBulk(STATE.records)).catch(e=>console.warn("IDB rewrite error",e));}
+function toast(msg){const t=document.getElementById("toast");t.textContent=msg;t.classList.add("show");clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove("show"),1900);}
+function toggleSidebar(){document.body.classList.toggle("sb-open");}
+function closeSidebarMobile(){document.body.classList.remove("sb-open");}
+
+/* ---------- defaults for a new record ---------- */
+function blankData(typeKey){
+    const t=TYPES[typeKey],d={};
+    t.fields.forEach(f=>{
+        if(f.s)return;
+        if(f.t==="list")d[f.n]=f.rows?JSON.parse(JSON.stringify(f.rows)):[emptyRow(f)];
+        else if(f.t==="matrix")d[f.n]=defaultMatrixItems();
+        else if(f.t==="images")d[f.n]=[];
+        else d[f.n]=(typeof f.def==="function")?f.def():(f.def!=null?f.def:"");
+    });
+    return d;
+}
+function emptyRow(f){const r={};f.cols.forEach(c=>r[c.n]=(c.def!=null?c.def:""));return r;}
+
+function createRecord(typeKey){
+    if(!guardUnsaved())return;
+    const rec={id:uid(),type:typeKey,createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),data:blankData(typeKey)};
+    applyUserDefaults(rec.data);
+    STATE.current=rec;STATE.editingId=null;STATE.dirty=false;STATE.view="edit"; // chưa lưu tới khi bấm 💾 Lưu
+    closeSidebarMobile();renderAll();
+    toast("Hồ sơ mới — bấm 💾 Lưu để lưu lại");
+}
+function openRecord(id){if(!guardUnsaved())return;const r=STATE.records.find(x=>x.id===id);if(!r)return;STATE.current=JSON.parse(JSON.stringify(r));STATE.editingId=id;STATE.dirty=false;STATE.view="edit";closeSidebarMobile();renderAll();}
+function guardUnsaved(){if(STATE.dirty&&STATE.current){if(confirm("Có thay đổi chưa lưu.\n\n• OK = LƯU lại\n• Cancel = Bỏ thay đổi")){saveRecord(true);}else{STATE.dirty=false;}}return true;}
+function deleteRecord(id){
+    if(STATE.current&&STATE.current.id===id&&STATE.editingId===null){STATE.current=null;STATE.dirty=false;STATE.view="welcome";renderAll();toast("Đã hủy hồ sơ mới");return;}
+    if(!confirm("Xóa hồ sơ này? Hành động không thể hoàn tác."))return;
+    STATE.records=STATE.records.filter(r=>r.id!==id);
+    if(STATE.current&&STATE.current.id===id){STATE.current=null;STATE.editingId=null;STATE.dirty=false;STATE.view="welcome";}
+    idbDel(id).catch(e=>console.warn(e));
+    addTombstone(id);syncNow(false);
+    renderAll();toast("Đã xóa hồ sơ");
+}
+function duplicateRecord(id){
+    const r=getRec(id);if(!r)return;
+    const c=JSON.parse(JSON.stringify(r));c.id=uid();c.createdAt=c.updatedAt=new Date().toISOString();
+    STATE.records.unshift(c);persistRecord(c);markDirty(c.id);syncNow(false);renderList();toast("Đã nhân bản hồ sơ");openRecord(c.id);
+}
+function touch(){if(STATE.current){STATE.dirty=true;markUnsaved();}}
+function markUnsaved(){const f=document.getElementById("savedFlag");if(f){f.textContent="● Chưa lưu";f.className="saved-flag draft";}maybeRetitle();}
+function saveRecord(silent){
+    if(!STATE.current)return;
+    STATE.current.updatedAt=new Date().toISOString();
+    const id=STATE.current.id, idx=STATE.records.findIndex(r=>r.id===id);
+    if(idx>=0)STATE.records[idx]=STATE.current; else STATE.records.unshift(STATE.current);
+    STATE.editingId=id;STATE.dirty=false;
+    idbPut(STATE.current).catch(e=>console.warn("idbPut",e));
+    markDirty(id);syncNow(false); // đẩy lên server
+    STATE.current=JSON.parse(JSON.stringify(STATE.current)); // tiếp tục soạn trên bản sao mới
+    const f=document.getElementById("savedFlag");if(f){f.textContent="✓ Đã lưu "+new Date().toLocaleTimeString("vi-VN");f.className="saved-flag";}
+    renderListSilently();
+    if(!silent)toast(SYNC.base?"Đã lưu & đồng bộ lên server":"Đã lưu");
+}
+function recTitle(r){try{return TYPES[r.type].title(r.data)||TYPES[r.type].label;}catch(e){return TYPES[r.type].label;}}
+
+/* =========================================================
+   RENDER — sidebar list
+========================================================= */
+function renderFilters(){
+    const counts={all:STATE.records.length};
+    TYPE_ORDER.forEach(k=>counts[k]=STATE.records.filter(r=>r.type===k).length);
+    let h=`<span class="chip ${STATE.filter==='all'?'active':''}" onclick="setFilter('all')">Tất cả (${counts.all})</span>`;
+    TYPE_ORDER.forEach(k=>{h+=`<span class="chip ${STATE.filter===k?'active':''}" onclick="setFilter('${k}')">${TYPES[k].icon} ${counts[k]}</span>`;});
+    document.getElementById("filters").innerHTML=h;
+}
+function setFilter(f){STATE.filter=f;renderFilters();renderList();}
+function renderList(){
+    const q=(document.getElementById("search").value||"").toLowerCase();
+    let recs=STATE.records.slice().sort((a,b)=>b.updatedAt.localeCompare(a.updatedAt));
+    if(STATE.filter!=="all")recs=recs.filter(r=>r.type===STATE.filter);
+    if(q)recs=recs.filter(r=>recTitle(r).toLowerCase().includes(q));
+    const el=document.getElementById("list");
+    if(!recs.length){el.innerHTML='<div class="empty">Chưa có hồ sơ. Bấm “＋ Tạo hồ sơ mới”.</div>';return;}
+    el.innerHTML=recs.map(r=>{
+        const t=TYPES[r.type];const active=STATE.current&&STATE.current.id===r.id;
+        return `<div class="rec ${active?'active':''}" onclick="openRecord('${r.id}')">
+            <div class="t">${esc(recTitle(r))}</div>
+            <div class="m"><span class="tag">${t.icon} ${esc(t.label)}</span><span>${fmtDateTime(r.updatedAt)}</span></div>
+        </div>`;
+    }).join("");
+}
+function renderListSilently(){renderFilters();renderList();}
+function fmtDateTime(iso){const d=new Date(iso);return String(d.getDate()).padStart(2,"0")+"/"+String(d.getMonth()+1).padStart(2,"0")+" "+String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0");}
+
+/* =========================================================
+   RENDER — main (welcome / editor)
+========================================================= */
+function renderAll(){renderFilters();renderList();renderMain();}
+function renderMain(){
+    const m=document.getElementById("main");
+    if(STATE.view==="dashboard"){m.innerHTML=dashboardHTML();return;}
+    if(STATE.view==="guide"){m.innerHTML=guideHTML();return;}
+    if(STATE.view==="welcome"||!STATE.current){m.innerHTML=welcomeHTML();return;}
+    m.innerHTML=editorHTML(STATE.current);
+}
+function showGuide(){guardUnsaved();STATE.current=null;STATE.editingId=null;STATE.dirty=false;STATE.view="guide";closeSidebarMobile();renderMain();renderList();}
+function showDashboard(){guardUnsaved();STATE.current=null;STATE.editingId=null;STATE.dirty=false;STATE.view="dashboard";closeSidebarMobile();renderMain();renderList();}
+function changeDashYear(d){DASH_YEAR+=d;renderMain();}
+
+/* ---------- Dashboard analytics ---------- */
+function recYear(r){const iso=r.data.ngay||r.createdAt||"";return parseInt(String(iso).slice(0,4))||0;}
+function recMonthNum(r){const iso=r.data.ngay||r.createdAt||"";return parseInt(String(iso).slice(5,7))||0;}
+function monthly(type,year){const a=new Array(12).fill(0);STATE.records.forEach(r=>{if(r.type===type&&recYear(r)===year){const m=recMonthNum(r);if(m>=1&&m<=12)a[m-1]++;}});return a;}
+function countType(type,year){return STATE.records.filter(r=>r.type===type&&(!year||recYear(r)===year)).length;}
+function miniChart(title,data,color){
+    const max=Math.max(1,...data), sum=data.reduce((a,b)=>a+b,0);
+    const bars=data.map((v,i)=>`<div class="bar" style="height:${Math.round(v/max*100)}%;background:${color}"><b>${v||""}</b><span>${i+1}</span></div>`).join("");
+    return `<div class="chart"><div class="ctitle">${title} <small>(tổng ${sum})</small></div><div class="bars">${bars}</div></div>`;
+}
+function dashboardHTML(){
+    const y=DASH_YEAR, total=STATE.records.length;
+    const sucosY=countType("sucos",y), kiemtraY=countType("kiemtra",y);
+    const dtY=countType("huanluyen",y)+countType("dientap",y);
+    // by type bars (all-time)
+    const maxT=Math.max(1,...TYPE_ORDER.map(k=>countType(k)));
+    const typeBars=TYPE_ORDER.map(k=>{const c=countType(k);return `<div class="tbar"><span class="tn">${TYPES[k].icon} ${esc(TYPES[k].label)}</span><span class="hbar"><i style="width:${Math.round(c/maxT*100)}%"></i></span><span class="tc">${c}</span></div>`;}).join("");
+    // severity (all-time, sucos)
+    const sev={"Nhẹ":0,"Trung bình":0,"Nghiêm trọng":0};
+    STATE.records.forEach(r=>{if(r.type==="sucos"){const m=r.data.mucDo;if(sev[m]!=null)sev[m]++;}});
+    const sevHTML=`<div class="sevwrap">
+        <div class="sevbox" style="background:#1e7e44"><div class="sn">${sev["Nhẹ"]}</div><div class="sl">Nhẹ</div></div>
+        <div class="sevbox" style="background:#9a6a00"><div class="sn">${sev["Trung bình"]}</div><div class="sl">Trung bình</div></div>
+        <div class="sevbox" style="background:#c0392b"><div class="sn">${sev["Nghiêm trọng"]}</div><div class="sl">Nghiêm trọng</div></div>
+    </div>`;
+    // recent
+    const recent=STATE.records.slice().sort((a,b)=>b.updatedAt.localeCompare(a.updatedAt)).slice(0,6)
+        .map(r=>`<div class="rec" onclick="openRecord('${r.id}')"><div class="t">${esc(recTitle(r))}</div><div class="m"><span class="tag">${TYPES[r.type].icon} ${esc(TYPES[r.type].label)}</span><span>${fmtDateTime(r.updatedAt)}</span></div></div>`).join("")
+        || '<div class="empty">Chưa có hồ sơ.</div>';
+    return `<div class="dash">
+        <div class="editor-head"><span class="tag">📊 Tổng quan</span><h2>Bảng tổng quan công tác PCCC</h2>
+            <span class="yearnav">Năm <button onclick="changeDashYear(-1)">‹</button> <b>${y}</b> <button onclick="changeDashYear(1)">›</button></span>
+            <button class="btn ghost sm" onclick="exportRecordsXLS()">⬇ Xuất Excel danh sách</button>
+        </div>
+        <div class="stats">
+            <div class="stat"><div class="n">${total}</div><div class="l">Tổng hồ sơ (tất cả)</div></div>
+            <div class="stat"><div class="n" style="color:#c0392b">${sucosY}</div><div class="l">Sự cố / nguy cơ — năm ${y}</div></div>
+            <div class="stat"><div class="n">${kiemtraY}</div><div class="l">Phiếu kiểm tra — năm ${y}</div></div>
+            <div class="stat"><div class="n">${dtY}</div><div class="l">Huấn luyện + diễn tập — năm ${y}</div></div>
+        </div>
+        <div class="charts">
+            ${miniChart("Sự cố / nguy cơ theo tháng",monthly("sucos",y),"#c0392b")}
+            ${miniChart("Kiểm tra thiết bị theo tháng",monthly("kiemtra",y),"#2e5b88")}
+            ${miniChart("Huấn luyện theo tháng",monthly("huanluyen",y),"#1e7e44")}
+            ${miniChart("Diễn tập theo tháng",monthly("dientap",y),"#9a6a00")}
+        </div>
+        <div class="sect" style="margin-top:24px">Hồ sơ theo loại (tất cả các năm)</div>
+        ${typeBars}
+        <div class="sect" style="margin-top:22px">Sự cố theo mức độ (tất cả)</div>
+        ${sevHTML}
+        <div class="sect" style="margin-top:22px">Hồ sơ cập nhật gần đây</div>
+        <div class="recent">${recent}</div>
+    </div>`;
+}
+function welcomeHTML(){
+    const cards=roleTypes().map(k=>{const t=TYPES[k];return `<div class="card" onclick="createRecord('${k}')">
+        <div class="ic">${t.icon}</div><div class="ti">${esc(t.label)}</div><div class="de">Tạo hồ sơ mới</div></div>`;}).join("");
+    return `<div class="welcome">
+        <div class="gbanner" style="text-align:left">
+            <div class="bic">📖</div>
+            <div><h3>Chưa rõ cần làm gì?</h3><p>Mở trang Hướng dẫn &amp; Nhiệm vụ để xem quy trình, phân công và tạo báo cáo đúng biểu mẫu.</p></div>
+            <button class="btn ghost" onclick="showGuide()">Xem hướng dẫn →</button>
+        </div>
+        <h2>Ứng dụng Quản lý Hồ sơ An toàn - PCCC</h2>
+        <p>Nhập liệu và lưu trữ các biên bản, báo cáo, kế hoạch PCCC ngay trên máy. Dữ liệu tự lưu (IndexedDB); dùng <b>Xuất JSON</b> để sao lưu thành file và <b>Nhập JSON</b> để khôi phục.</p>
+        <div class="cards">${cards}</div>
+        <p style="margin-top:24px;font-size:12.5px;">Tổng số hồ sơ đang lưu: <b>${STATE.records.length}</b></p>
+    </div>`;
+}
+
+/* ---------- Guide / Duties page ---------- */
+function gBtn(typeKey,label){return `<button class="btn sm" onclick="createRecord('${typeKey}')">＋ ${esc(label||"Tạo")}</button>`;}
+function guideHTML(){
+    const step=(num,title,desc,acts)=>`<div class="step"><div class="num">${num}</div><div class="sc"><b>${title}</b><div>${desc}</div><div class="acts">${acts}</div></div></div>`;
+    const trow=(bieuMau,nguoi,tanSuat,bangChung,key)=>`<tr><td><b>${bieuMau}</b></td><td>${nguoi}</td><td>${tanSuat}</td><td>${bangChung}</td><td>${gBtn(key)}</td></tr>`;
+    return `<div class="guide">
+        <div class="editor-head"><span class="tag">📖 Hướng dẫn</span><h2>Hướng dẫn &amp; Nhiệm vụ Công tác An toàn - PCCC</h2></div>
+        <div class="form">
+            <p>Trang này giúp <b>mọi thành viên</b> nắm rõ: cần làm gì, khi nào, dùng biểu mẫu nào và lưu bằng chứng ra sao. Bấm nút <b>＋ Tạo</b> ở mỗi mục để mở ngay biểu mẫu tương ứng và thực hiện báo cáo.</p>
+
+            <div class="sect">A. Quy trình tổng thể (7 bước)</div>
+            ${step(1,"Kiện toàn lực lượng","Lập/cập nhật danh sách đội viên PCCC &amp; mạng lưới ATVSV và phân công nhiệm vụ chi tiết.",gBtn("doivien","Danh sách đội viên")+" "+gBtn("phancong","Bảng phân công"))}
+            ${step(2,"Lập kế hoạch năm","Xây dựng kế hoạch triển khai và bảng theo dõi hoạt động PCCC theo tháng.",gBtn("kehoach","Kế hoạch triển khai")+" "+gBtn("hoatdong","Hoạt động PCCC năm"))}
+            ${step(3,"Quản lý &amp; kiểm tra thiết bị","Kiểm tra định kỳ, bảo dưỡng, nạp sạc thiết bị PCCC; ghi phiếu kiểm tra mỗi kỳ.",gBtn("kiemtra","Phiếu kiểm tra thiết bị"))}
+            ${step(4,"Huấn luyện &amp; diễn tập","Tổ chức huấn luyện nội bộ (3 tháng/lần) và diễn tập (2 lần/năm); lập biên bản kèm ảnh &amp; danh sách ký nhận.",gBtn("huanluyen","Biên bản huấn luyện")+" "+gBtn("dientap","Biên bản diễn tập"))}
+            ${step(5,"Họp định kỳ mạng lưới ATVSV","Họp hàng tháng đánh giá hoạt động, giải quyết khó khăn, phân công công việc.",gBtn("hop","Biên bản họp ATVSV"))}
+            ${step(6,"Báo cáo sự cố / nguy cơ","Mọi thành viên báo ngay khi phát hiện sự cố cháy nổ hoặc nguy cơ mất an toàn — kèm ảnh hiện trường.",gBtn("sucos","Phiếu báo cáo sự cố"))}
+            ${step(7,"Báo cáo định kỳ &amp; lưu hồ sơ","Tổng hợp số liệu, lập báo cáo công tác PCCC theo tháng/quý/năm; lưu trữ đầy đủ chứng từ.",gBtn("baocao","Báo cáo công tác"))}
+
+            <div class="sect">B. Ai làm gì — dùng biểu mẫu nào — tần suất</div>
+            <div class="table-wrap" style="border:none">
+            <table class="gtable">
+                <thead><tr><th>Biểu mẫu</th><th>Người thực hiện</th><th>Tần suất</th><th>Bằng chứng</th><th></th></tr></thead>
+                <tbody>
+                    ${trow("Phiếu báo cáo sự cố / nguy cơ","Mọi thành viên","Khi phát sinh","Phiếu + ảnh hiện trường","sucos")}
+                    ${trow("Phiếu kiểm tra thiết bị PCCC","Đội viên (luân phiên), Đội trưởng xác nhận","Hàng tuần / tháng","Phiếu kiểm tra có ký","kiemtra")}
+                    ${trow("Biên bản huấn luyện","Đội trưởng / Đội phó","3 tháng / lần","Biên bản + ảnh + DS ký nhận","huanluyen")}
+                    ${trow("Biên bản diễn tập","Đội PCCC / CA PCCC","2 lần / năm","Biên bản + ảnh","dientap")}
+                    ${trow("Biên bản họp ATVSV","Đội trưởng / Đội phó","Hàng tháng","Biên bản họp","hop")}
+                    ${trow("Báo cáo công tác PCCC","Đội trưởng","Tháng / quý / năm","Báo cáo có duyệt","baocao")}
+                    ${trow("Kế hoạch triển khai","Đội trưởng","Hàng năm","Kế hoạch được duyệt","kehoach")}
+                    ${trow("Hoạt động PCCC năm","Đội PCCC","Năm (theo dõi tháng)","Bảng theo dõi","hoatdong")}
+                    ${trow("Bảng phân công công việc","Đội trưởng","Đầu năm / khi phát sinh","Bảng phân công","phancong")}
+                    ${trow("Danh sách đội viên PCCC","Đội trưởng / HCNS","Khi phát sinh","DS có ký duyệt","doivien")}
+                </tbody>
+            </table>
+            </div>
+
+            <div class="sect">C. Dành cho thành viên — việc thường gặp</div>
+            <div class="mcards">
+                <div class="mcard"><div class="mi">⚠️</div><div class="mt">Phát hiện sự cố / nguy cơ?</div><div class="md">Báo cáo ngay sự cố cháy nổ, thiết bị hỏng hoặc nguy cơ mất an toàn, kèm ảnh.</div>${gBtn("sucos","Tạo phiếu báo cáo")}</div>
+                <div class="mcard"><div class="mi">🔧</div><div class="mt">Đến kỳ kiểm tra thiết bị?</div><div class="md">Ghi nhận tình trạng bình chữa cháy, hệ thống báo cháy, lối thoát nạn...</div>${gBtn("kiemtra","Tạo phiếu kiểm tra")}</div>
+                <div class="mcard"><div class="mi">🗂️</div><div class="mt">Cần tra cứu nhiệm vụ?</div><div class="md">Xem ai phụ trách việc gì, tần suất và khu vực thực hiện.</div>${gBtn("phancong","Mở bảng phân công")}</div>
+            </div>
+
+            <div class="sect">D. Căn cứ pháp lý</div>
+            <ul>
+                <li>Luật PCCC &amp; CNCH và các văn bản hướng dẫn thi hành.</li>
+                <li>Nghị định 136/2020/NĐ-CP; Nghị định 50/2024/NĐ-CP.</li>
+                <li>Thông tư hướng dẫn huấn luyện nghiệp vụ PCCC &amp; chế độ bồi dưỡng có liên quan.</li>
+                <li>Nội quy, quy định an toàn PCCC đã được phê duyệt của VFM &amp; DQH.</li>
+            </ul>
+            <p style="font-size:12.5px;font-style:italic;color:var(--muted)">Đơn vị rà soát số hiệu &amp; hiệu lực mới nhất của văn bản tại thời điểm áp dụng.</p>
+
+            <div class="callout">⚠️ <b>Lưu ý:</b> Các danh sách điền sẵn (đội viên, phân công, danh mục thiết bị) là <b>mẫu tham khảo</b> — vui lòng rà soát, cập nhật đúng thực tế đơn vị trước khi ban hành. Định mức bồi dưỡng: huấn luyện nội bộ <b>100.000đ</b>, Công an huấn luyện <b>150.000đ</b>/người/lần.</div>
+        </div>
+    </div>`;
+}
+
+function editorHTML(rec){
+    const t=TYPES[rec.type];
+    let body="",inGrid=false;
+    const open=()=>{if(!inGrid){body+='<div class="grid2">';inGrid=true;}};
+    const close=()=>{if(inGrid){body+='</div>';inGrid=false;}};
+    t.fields.forEach(f=>{
+        if(f.s){close();body+=`<div class="sect">${esc(f.s)}</div>`;return;}
+        if(f.t==="list"){close();body+=listEditor(rec,f);return;}
+        if(f.t==="matrix"){close();body+=matrixEditor(rec,f);return;}
+        if(f.t==="images"){close();body+=imagesEditor(rec,f);return;}
+        open();body+=fieldEditor(rec,f);
+    });
+    close();
+    return `<div class="editor-head">
+        <span class="tag">${t.icon} ${esc(t.label)}</span>
+        <h2>${esc(recTitle(rec))}</h2>
+        ${STATE.editingId===null?'<span class="saved-flag draft" id="savedFlag">📝 Hồ sơ mới — chưa lưu</span>':(STATE.dirty?'<span class="saved-flag draft" id="savedFlag">● Chưa lưu</span>':'<span class="saved-flag" id="savedFlag">✓ Đã lưu</span>')}
+    </div>
+    <div class="form">${body}</div>
+    <div class="editor-foot">
+        <button class="btn save" onclick="saveRecord()">💾 Lưu</button>
+        <button class="btn ghost" onclick="printRecord('${rec.id}')">🖨 In / Xuất PDF</button>
+        <button class="btn ghost" onclick="exportWord('${rec.id}')">⬇ Word (.doc)</button>
+        ${typeFirstList(rec.type)?`<button class="btn ghost" onclick="exportRecordTableXLS('${rec.id}')">⬇ Excel bảng</button>`:""}
+        <button class="btn ghost" onclick="exportOne('${rec.id}')">⬇ Xuất hồ sơ (JSON)</button>
+        <button class="btn ghost" onclick="duplicateRecord('${rec.id}')">⧉ Nhân bản</button>
+        <button class="btn ghost" onclick="closeEditor()">✕ Đóng</button>
+        <span style="flex:1"></span>
+        <button class="btn danger" onclick="deleteRecord('${rec.id}')">🗑 Xóa</button>
+    </div>`;
+}
+
+function fieldEditor(rec,f){
+    const v=rec.data[f.n]==null?"":rec.data[f.n];
+    const id="f_"+f.n;
+    let input;
+    const bind=`oninput="setField('${f.n}',this.value)" onchange="setField('${f.n}',this.value)"`;
+    if(f.t==="textarea")input=`<textarea id="${id}" ${bind}>${esc(v)}</textarea>`;
+    else if(f.t==="select"){const opts=['<option value=""></option>'].concat(f.o.map(o=>`<option ${o==v?"selected":""}>${esc(o)}</option>`)).join("");input=`<select id="${id}" ${bind}>${opts}</select>`;}
+    else input=`<input id="${id}" type="${f.t||'text'}" value="${esc(v)}" placeholder="${esc(f.ph||'')}" ${bind}>`;
+    return `<div class="fld ${f.full?'full':''}"><label>${esc(f.l)}</label>${input}</div>`;
+}
+function setField(name,val){if(!STATE.current)return;STATE.current.data[name]=val;touch();maybeRetitle();}
+function maybeRetitle(){const h=document.querySelector(".editor-head h2");if(h&&STATE.current)h.textContent=recTitle(STATE.current);}
+
+/* ---------- list editor ---------- */
+function listEditor(rec,f){
+    const rows=rec.data[f.n]||[];
+    const head=f.cols.map(c=>`<th style="${c.w?'width:'+c.w:''}">${esc(c.l)}</th>`).join("")+'<th style="width:34px"></th>';
+    const trs=rows.map((row,i)=>{
+        const tds=f.cols.map(c=>{
+            const inp=`<input value="${esc(row[c.n]||'')}" oninput="setCell('${f.n}',${i},'${c.n}',this.value)">`;
+            if(c.pick&&MEMBERS)return `<td><div class="cellpick">${inp}<button class="cpk" title="Chọn từ danh bạ" onclick="openCellPicker('${f.n}',${i},'${c.n}','${c.pick}')">👤</button></div></td>`;
+            return `<td>${inp}</td>`;
+        }).join("");
+        return `<tr>${tds}<td style="text-align:center"><button class="rowdel" title="Xóa dòng" onclick="delRow('${f.n}',${i})">✕</button></td></tr>`;
+    }).join("");
+    const memberBtn=(f.member&&MEMBERS)?`<button class="btn ghost sm addrow" style="margin-left:0" onclick="openMemberPicker('${f.n}')">👥 Thêm từ danh bạ</button>`:"";
+    return `<div class="listbox"><table class="le"><thead><tr>${head}</tr></thead><tbody>${trs}</tbody></table>
+        <button class="btn ghost sm addrow" onclick="addRow('${f.n}')">＋ Thêm dòng</button>${memberBtn}</div>`;
+}
+function fieldByName(n){return TYPES[STATE.current.type].fields.find(x=>x.n===n);}
+function setCell(name,i,col,val){STATE.current.data[name][i][col]=val;touch();}
+function addRow(name){const f=fieldByName(name);STATE.current.data[name].push(emptyRow(f));touch();renderMain();}
+function delRow(name,i){STATE.current.data[name].splice(i,1);if(!STATE.current.data[name].length){STATE.current.data[name].push(emptyRow(fieldByName(name)));}touch();renderMain();}
+
+/* ---------- quick-add members from directory ---------- */
+let PICKER_FIELD=null;
+function memberNameCol(f){return f.member?Object.keys(f.member).find(k=>f.member[k]==="name"):null;}
+function memberPropCol(f,prop){return f.member?Object.keys(f.member).find(k=>f.member[k]===prop):null;}
+function rowKey(r,nameCol,msnvCol){const msnv=msnvCol?String(r[msnvCol]||"").trim():"";if(msnv)return "#"+msnv;const nm=nameCol?String(r[nameCol]||"").trim().toLowerCase():"";return nm?"@"+nm:"";}
+function memberKey(m,f){const msnvCol=memberPropCol(f,"msnv");const msnv=msnvCol?String(m[f.member[msnvCol]]||"").trim():"";if(msnv)return "#"+msnv;return "@"+String(m.name||"").trim().toLowerCase();}
+function openMemberPicker(name){
+    if(!MEMBERS){toast("Chưa có file cấu hình danh bạ (pccc_members.js)");return;}
+    PICKER_FIELD=name;
+    const f=fieldByName(name), nameCol=memberNameCol(f), msnvCol=memberPropCol(f,"msnv");
+    const existing=new Set((STATE.current.data[name]||[]).map(r=>rowKey(r,nameCol,msnvCol)).filter(k=>k));
+    const list=pickerGroups(({m,i})=>{
+        const added=existing.has(memberKey(m,f));
+        return `<label class="pk-item${added?' disabled':''}" data-s="${memberSearch(m)}"><input type="checkbox" value="${i}" ${added?'disabled':''}><b>${esc(m.name)}</b><span>${esc(m.department||"")}${m.position?" · "+esc(m.position):""}${added?' <em class="pk-added">✓ đã có</em>':''}</span></label>`;
+    });
+    document.getElementById("picker").innerHTML=`<div class="login-box pk-box">
+        <h2>Thêm thành viên từ danh bạ</h2>
+        <p>Chọn các thành viên cần thêm vào danh sách. Tên, MNV, bộ phận sẽ được điền tự động.</p>
+        <input class="pk-search" placeholder="🔎 Tìm theo tên / bộ phận..." oninput="pkSearch(this.value)">
+        <label class="pk-item" style="border-bottom:1px solid var(--line);margin-bottom:4px"><input type="checkbox" onchange="pkToggleAll(this)"><b>Chọn tất cả (đang hiển thị)</b></label>
+        <div class="pk-list">${list}</div>
+        <div style="display:flex;gap:8px;margin-top:14px">
+            <button class="btn" style="flex:1" onclick="confirmMemberPicker()">＋ Thêm đã chọn</button>
+            <button class="btn ghost" onclick="closePicker()">Hủy</button>
+        </div>
+    </div>`;
+    document.getElementById("picker").classList.add("open");
+}
+function memberSearch(m){return esc(((m.name||"")+" "+(m.department||"")+" "+(m.position||"")+" "+(m.unit||"")).toLowerCase());}
+function pickerGroups(itemFn){
+    const byUnit={};MEMBERS.forEach((m,i)=>{const u=m.unit||"Khác";(byUnit[u]=byUnit[u]||[]).push({m,i});});
+    let list="";
+    Object.keys(byUnit).forEach(u=>{list+=`<div class="pk-grpwrap"><div class="pk-grp">${esc(u)}</div>`+byUnit[u].map(itemFn).join("")+`</div>`;});
+    return list;
+}
+function pkSearch(q){
+    q=(q||"").trim().toLowerCase();
+    document.querySelectorAll('#picker .pk-grpwrap').forEach(g=>{
+        let any=false;
+        g.querySelectorAll('.pk-item').forEach(it=>{const ok=!q||(it.getAttribute('data-s')||'').indexOf(q)>=0;it.style.display=ok?'':'none';if(ok)any=true;});
+        g.style.display=any?'':'none';
+    });
+}
+function pkToggleAll(cb){document.querySelectorAll('#picker .pk-list .pk-item').forEach(it=>{if(it.style.display!=='none'){const x=it.querySelector('input[type="checkbox"]');if(x&&!x.disabled)x.checked=cb.checked;}});}
+function closePicker(){document.getElementById("picker").classList.remove("open");}
+
+/* ---- single-person cell picker ---- */
+let CELL_PICK=null;
+function openCellPicker(name,row,col,prop){
+    if(!MEMBERS){toast("Chưa có file cấu hình danh bạ (pccc_members.js)");return;}
+    CELL_PICK={name,row:parseInt(row),col,prop};
+    const list=pickerGroups(({m,i})=>`<div class="pk-item click" data-s="${memberSearch(m)}" onclick="pickCell(${i})"><b>${esc(m.name)}</b><span>${esc(m.department||"")}${m.position?" · "+esc(m.position):""}</span></div>`);
+    document.getElementById("picker").innerHTML=`<div class="login-box pk-box">
+        <h2>Chọn người từ danh bạ</h2>
+        <p>Bấm vào tên để điền vào ô đang chọn.</p>
+        <input class="pk-search" placeholder="🔎 Tìm theo tên / bộ phận..." oninput="pkSearch(this.value)">
+        <div class="pk-list">${list}</div>
+        <div style="margin-top:12px;text-align:right"><button class="btn ghost" onclick="closePicker()">Hủy</button></div>
+    </div>`;
+    document.getElementById("picker").classList.add("open");
+}
+function pickCell(i){
+    if(!CELL_PICK){closePicker();return;}
+    const m=MEMBERS[i];if(!m){closePicker();return;}
+    const {name,row,col,prop}=CELL_PICK;
+    if(STATE.current&&STATE.current.data[name]&&STATE.current.data[name][row]){STATE.current.data[name][row][col]=m[prop]||m.name||"";}
+    touch();renderMain();closePicker();
+}
+function confirmMemberPicker(){
+    const name=PICKER_FIELD, f=name&&fieldByName(name);
+    if(!f||!STATE.current){closePicker();return;}
+    const checked=[...document.querySelectorAll('#picker .pk-list input[type="checkbox"]:checked')].map(x=>parseInt(x.value));
+    if(!checked.length){toast("Chưa chọn thành viên nào");return;}
+    const arr=STATE.current.data[name];
+    const nameCol=memberNameCol(f), msnvCol=memberPropCol(f,"msnv");
+    const allEmpty=arr.every(r=>f.cols.every(c=>{const v=String(r[c.n]==null?"":r[c.n]).trim();return v===""||v===String(c.def==null?"":c.def);}));
+    if(allEmpty)arr.length=0;
+    const existing=new Set(arr.map(r=>rowKey(r,nameCol,msnvCol)).filter(k=>k));
+    let added=0,dup=0;
+    checked.forEach(idx=>{const m=MEMBERS[idx];const k=memberKey(m,f);if(existing.has(k)){dup++;return;}const row=emptyRow(f);Object.keys(f.member).forEach(col=>{row[col]=m[f.member[col]]||"";});arr.push(row);existing.add(k);added++;});
+    touch();renderMain();closePicker();toast("Đã thêm "+added+" thành viên"+(dup?" · bỏ "+dup+" trùng":""));
+}
+
+/* ---------- matrix editor ---------- */
+function matrixEditor(rec,f){
+    const items=rec.data[f.n]||[];
+    const mh=MONTHS.map(m=>`<th>${m}</th>`).join("");
+    const trs=items.map((it,i)=>{
+        const cells=MONTHS.map(m=>{const v=it.months[m]||"";const cls=v==="KH"?"kh":(v==="TH"?"th":"");const sym=v==="KH"?"○":(v==="TH"?"●":"");
+            return `<td class="mcell ${cls}" onclick="cycleCell(${i},${m})" title="Bấm để đổi: trống → ○ Kế hoạch → ● Đã thực hiện">${sym}</td>`;}).join("");
+        return `<tr>
+            <td style="text-align:center">${i+1}</td>
+            <td class="item"><input value="${esc(it.hangMuc)}" oninput="setItem(${i},'hangMuc',this.value)"></td>
+            <td><input value="${esc(it.tanSuat)}" oninput="setItem(${i},'tanSuat',this.value)" style="width:90px"></td>
+            <td><input value="${esc(it.benNgoai)}" oninput="setItem(${i},'benNgoai',this.value)" style="width:90px"></td>
+            <td><input value="${esc(it.noiBo)}" oninput="setItem(${i},'noiBo',this.value)" style="width:90px"></td>
+            ${cells}
+            <td style="text-align:center"><button class="rowdel" onclick="delItem(${i})">✕</button></td>
+        </tr>`;
+    }).join("");
+    return `<div class="matrix-hint">Bấm vào ô tháng để chuyển: trống → <b style="color:#2e5b88">○</b> Kế hoạch → <b style="color:#1e7e44">●</b> Đã thực hiện.</div>
+    <div class="mwrap"><table class="mx"><thead><tr>
+        <th>No.</th><th>Hạng mục</th><th>Tần suất</th><th>Bên ngoài</th><th>Nội bộ</th>${mh}<th></th>
+    </tr></thead><tbody>${trs}</tbody></table></div>
+    <button class="btn ghost sm addrow" onclick="addItem()">＋ Thêm hạng mục</button>`;
+}
+function cycleCell(i,m){const it=STATE.current.data.items[i];const cur=it.months[m]||"";it.months[m]=cur===""?"KH":(cur==="KH"?"TH":"");touch();renderMain();}
+function setItem(i,k,v){STATE.current.data.items[i][k]=v;touch();}
+function addItem(){const ms={};MONTHS.forEach(m=>ms[m]="");STATE.current.data.items.push({hangMuc:"",tanSuat:"",benNgoai:"",noiBo:"",months:ms});touch();renderMain();}
+function delItem(i){STATE.current.data.items.splice(i,1);touch();renderMain();}
+
+function markSaved(){const f=document.getElementById("savedFlag");if(f){f.textContent="✓ Đã lưu "+new Date().toLocaleTimeString("vi-VN");f.style.opacity="1";}}
+
+/* =========================================================
+   IMAGE NORMALIZATION
+   Chuẩn hoá ảnh trước khi lưu: sửa hướng xoay theo EXIF,
+   thu nhỏ về cạnh tối đa MAX_DIM, nén JPEG -> bỏ metadata.
+========================================================= */
+const IMG_MAX_DIM=1600, IMG_QUALITY=0.82;
+function getExifOrientation(file){
+    return new Promise(res=>{
+        const r=new FileReader();
+        r.onload=e=>{
+            const v=new DataView(e.target.result);
+            if(v.byteLength<2||v.getUint16(0)!==0xFFD8){res(1);return;} // not JPEG
+            let off=2;const len=v.byteLength;
+            while(off<len){
+                if(v.getUint16(off)===0xFFE1){ // APP1 (EXIF)
+                    const little=v.getUint16(off+10)===0x4949;
+                    const tiff=off+10;
+                    const dirOff=tiff+v.getUint32(off+14,little);
+                    const n=v.getUint16(dirOff,little);
+                    for(let i=0;i<n;i++){const ent=dirOff+2+i*12;if(v.getUint16(ent,little)===0x0112){res(v.getUint16(ent+8,little)||1);return;}}
+                    res(1);return;
+                }
+                if((v.getUint16(off)&0xFF00)!==0xFF00)break;
+                off+=2+v.getUint16(off+2);
+            }
+            res(1);
+        };
+        r.onerror=()=>res(1);
+        r.readAsArrayBuffer(file.slice(0,128*1024));
+    });
+}
+function normalizeImage(file){
+    return new Promise((resolve,reject)=>{
+        if(!file.type.startsWith("image/")){reject(new Error("Không phải ảnh"));return;}
+        getExifOrientation(file).then(orient=>{
+            const img=new Image(), url=URL.createObjectURL(file);
+            img.onload=()=>{
+                let w=img.naturalWidth, h=img.naturalHeight;
+                const swap=orient>=5&&orient<=8;            // 90°/270° -> hoán đổi cạnh
+                let dw=w, dh=h;
+                const longest=Math.max(swap?h:w, swap?w:h);
+                let scale=longest>IMG_MAX_DIM?IMG_MAX_DIM/longest:1;
+                dw=Math.round(w*scale); dh=Math.round(h*scale);
+                const c=document.createElement("canvas");
+                c.width=swap?dh:dw; c.height=swap?dw:dh;
+                const ctx=c.getContext("2d");
+                ctx.fillStyle="#fff"; ctx.fillRect(0,0,c.width,c.height); // nền trắng cho ảnh trong suốt
+                switch(orient){
+                    case 2: ctx.transform(-1,0,0,1,c.width,0);break;
+                    case 3: ctx.transform(-1,0,0,-1,c.width,c.height);break;
+                    case 4: ctx.transform(1,0,0,-1,0,c.height);break;
+                    case 5: ctx.transform(0,1,1,0,0,0);break;
+                    case 6: ctx.transform(0,1,-1,0,c.width,0);break;
+                    case 7: ctx.transform(0,-1,-1,0,c.width,c.height);break;
+                    case 8: ctx.transform(0,-1,1,0,0,c.height);break;
+                }
+                ctx.drawImage(img,0,0,dw,dh);
+                URL.revokeObjectURL(url);
+                const dataUrl=c.toDataURL("image/jpeg",IMG_QUALITY);
+                resolve({dataUrl,w:swap?dh:dw,h:swap?dw:dh,bytes:Math.round(dataUrl.length*0.75)});
+            };
+            img.onerror=()=>{URL.revokeObjectURL(url);reject(new Error("Không đọc được ảnh"));};
+            img.src=url;
+        });
+    });
+}
+function humanSize(b){return b>1048576?(b/1048576).toFixed(1)+" MB":Math.max(1,Math.round(b/1024))+" KB";}
+
+async function processImageFiles(name,fileList){
+    if(!STATE.current)return;
+    const files=Array.from(fileList||[]).filter(f=>f.type.startsWith("image/"));
+    if(!files.length){toast("Không có ảnh hợp lệ");return;}
+    toast("Đang chuẩn hoá "+files.length+" ảnh...");
+    let ok=0;
+    for(const file of files){
+        try{
+            const im=await normalizeImage(file);
+            STATE.current.data[name].push({id:uid(),name:file.name,caption:"",dataUrl:im.dataUrl,w:im.w,h:im.h,bytes:im.bytes});
+            ok++;
+        }catch(e){console.warn("Bỏ qua",file.name,e);}
+    }
+    touch(); renderMain();
+    toast(ok+" ảnh đã thêm — bấm 💾 Lưu để lưu lại");
+}
+function addImages(name,input){const files=Array.from(input.files||[]);input.value="";processImageFiles(name,files);}
+function dzOver(ev){ev.preventDefault();ev.currentTarget.classList.add("dzover");}
+function dzLeave(ev){if(ev.currentTarget===ev.target||!ev.currentTarget.contains(ev.relatedTarget))ev.currentTarget.classList.remove("dzover");}
+function dropImages(name,ev){ev.preventDefault();ev.stopPropagation();ev.currentTarget.classList.remove("dzover");processImageFiles(name,ev.dataTransfer.files);}
+
+/* ---------- lightbox ---------- */
+let LB={name:null,idx:0};
+function openLightbox(name,idx){LB.name=name;LB.idx=idx;renderLightbox();document.getElementById("lightbox").classList.add("open");}
+function renderLightbox(){
+    const arr=(STATE.current&&STATE.current.data[LB.name])||[];
+    if(!arr.length){closeLightbox();return;}
+    if(LB.idx<0)LB.idx=arr.length-1; if(LB.idx>=arr.length)LB.idx=0;
+    const im=arr[LB.idx];
+    document.getElementById("lbImg").src=im.dataUrl;
+    document.getElementById("lbCounter").textContent=(LB.idx+1)+" / "+arr.length;
+    document.getElementById("lbCaption").textContent=im.caption||"";
+}
+function lbNav(d,ev){if(ev)ev.stopPropagation();LB.idx+=d;renderLightbox();}
+function closeLightbox(){document.getElementById("lightbox").classList.remove("open");}
+function lbBackdrop(ev){if(ev.target.id==="lightbox")closeLightbox();}
+document.addEventListener("keydown",e=>{
+    if(!document.getElementById("lightbox").classList.contains("open"))return;
+    if(e.key==="Escape")closeLightbox();
+    else if(e.key==="ArrowLeft")lbNav(-1);
+    else if(e.key==="ArrowRight")lbNav(1);
+});
+function delImage(name,i){STATE.current.data[name].splice(i,1);touch();renderMain();}
+function setCaption(name,i,val){STATE.current.data[name][i].caption=val;touch();}
+
+function imagesEditor(rec,f){
+    const imgs=rec.data[f.n]||[];
+    const total=imgs.reduce((s,im)=>s+(im.bytes||0),0);
+    const thumbs=imgs.map((im,i)=>`<div class="thumb">
+        <img src="${im.dataUrl}" alt="" loading="lazy" title="Bấm để xem lớn" onclick="openLightbox('${f.n}',${i})">
+        <input placeholder="Chú thích ảnh..." value="${esc(im.caption||'')}" oninput="setCaption('${f.n}',${i},this.value)">
+        <button class="thdel" title="Xóa ảnh" onclick="delImage('${f.n}',${i})">✕</button>
+    </div>`).join("");
+    return `<div class="imgs" ondragover="dzOver(event)" ondragleave="dzLeave(event)" ondrop="dropImages('${f.n}',event)">
+        <label class="uploadbtn">📷 Thêm ảnh / Chụp ảnh
+            <input type="file" accept="image/*" multiple capture="environment" style="display:none" onchange="addImages('${f.n}',this)">
+        </label>
+        <span class="dzhint">hoặc kéo-thả ảnh vào đây</span>
+        ${imgs.length?`<span style="font-size:11.5px;color:var(--muted);margin-left:10px">${imgs.length} ảnh · ~${humanSize(total)} (đã nén)</span>`:""}
+        <div class="thumbgrid">${thumbs||'<div class="empty" style="grid-column:1/-1">Chưa có ảnh. Bấm “Thêm ảnh” hoặc kéo-thả vào đây — ảnh sẽ được tự thu nhỏ & nén trước khi lưu.</div>'}</div>
+    </div>`;
+}
+
+/* =========================================================
+   IMPORT / EXPORT JSON
+========================================================= */
+function downloadAs(filename,text,mime){
+    const blob=new Blob([text],{type:mime+";charset=utf-8"});
+    const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=filename;
+    document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},100);
+}
+function download(filename,text){downloadAs(filename,text,"application/json");}
+
+/* ---------- Word (.doc) export — mở & chỉnh sửa được trong MS Word ---------- */
+const PDOC_CSS=`
+.pdoc{font-family:"Times New Roman",serif;font-size:13pt;color:#000;}
+.ptop{width:100%;border-collapse:collapse;margin-bottom:6px;}
+.ptop td{vertical-align:top;text-align:center;font-size:12pt;}
+.org{font-weight:bold;text-transform:uppercase;}
+.rule{display:inline-block;border-bottom:1px solid #000;width:55%;margin:3px 0 6px;}
+h1{text-align:center;font-size:15pt;text-transform:uppercase;margin:18px 0 2px;}
+.psub{text-align:center;font-style:italic;margin:0 0 14px;}
+h3{font-size:13pt;color:#1b365d;margin:14px 0 5px;}
+p{margin:6px 0;text-align:justify;}
+table.pg{width:100%;border-collapse:collapse;margin:8px 0;font-size:12pt;}
+table.pg th,table.pg td{border:1px solid #333;padding:5px 6px;vertical-align:top;}
+table.pg th{background:#e9eef5;text-align:center;}
+.psign{width:100%;margin-top:26px;border-collapse:collapse;}
+.psign td{text-align:center;vertical-align:top;font-size:12pt;}
+.psign .role{font-weight:bold;text-transform:uppercase;}
+.psign .hint{font-style:italic;}
+.psign .sp{height:60px;}
+.mxp{border-collapse:collapse;width:100%;font-size:10pt;}
+.mxp th,.mxp td{border:1px solid #333;padding:3px 4px;text-align:center;}
+.mxp th{background:#1b365d;color:#fff;}
+.mxp td.l{text-align:left;}
+img{max-width:100%;}`;
+function wordDoc(bodyHtml){
+    return `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"><title>PCCC</title><style>${PDOC_CSS}</style></head><body>${bodyHtml}</body></html>`;
+}
+function exportWord(id){
+    const r=getRec(id);if(!r)return;
+    downloadAs("pccc-"+r.type+"-"+todayISO()+".doc", wordDoc(renderPrint(r)), "application/msword");
+    toast("Đã xuất file Word (.doc)");
+}
+
+/* ---------- Excel (.xls) export — HTML table mở trực tiếp trong Excel ---------- */
+function xlsDoc(tableHtml){
+    return `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"><style>table{border-collapse:collapse}td,th{border:1px solid #999;padding:4px 8px;mso-number-format:'\\@';vertical-align:top}th{background:#1b365d;color:#fff;font-weight:bold}</style></head><body>${tableHtml}</body></html>`;
+}
+function typeFirstList(type){return TYPES[type].fields.find(f=>f.t==="list");}
+function exportRecordsXLS(){
+    if(!STATE.records.length){toast("Chưa có dữ liệu để xuất");return;}
+    const rows=STATE.records.slice().sort((a,b)=>b.updatedAt.localeCompare(a.updatedAt)).map((r,i)=>{
+        const d=r.data, docno=d.soBienBan||d.soKeHoach||d.maTaiLieu||d.soVanBan||"";
+        return `<tr><td>${i+1}</td><td>${esc(TYPES[r.type].label)}</td><td>${esc(recTitle(r))}</td><td>${esc(d.donVi||"")}</td><td>${esc(docno)}</td><td>${esc(fmtDate(d.ngay))}</td><td>${esc(fmtDateTime(r.updatedAt))}</td></tr>`;
+    }).join("");
+    const table=`<table><thead><tr><th>STT</th><th>Loại hồ sơ</th><th>Tiêu đề</th><th>Đơn vị</th><th>Số văn bản</th><th>Ngày</th><th>Cập nhật</th></tr></thead><tbody>${rows}</tbody></table>`;
+    downloadAs("pccc-danhsach-"+todayISO()+".xls", xlsDoc(table), "application/vnd.ms-excel");
+    toast("Đã xuất danh sách hồ sơ ra Excel");
+}
+function exportRecordTableXLS(id){
+    const r=getRec(id);if(!r)return;
+    const f=typeFirstList(r.type);if(!f){toast("Hồ sơ này không có bảng để xuất");return;}
+    const rows=(r.data[f.n]||[]).map((row,i)=>`<tr><td>${i+1}</td>${f.cols.map(c=>`<td>${esc(row[c.n]||"")}</td>`).join("")}</tr>`).join("");
+    const table=`<table><thead><tr><th>STT</th>${f.cols.map(c=>`<th>${esc(c.l)}</th>`).join("")}</tr></thead><tbody>${rows}</tbody></table>`;
+    downloadAs("pccc-"+r.type+"-bang-"+todayISO()+".xls", xlsDoc(table), "application/vnd.ms-excel");
+    toast("Đã xuất bảng ra Excel");
+}
+function exportAll(){
+    if(!STATE.records.length){toast("Chưa có dữ liệu để xuất");return;}
+    download("pccc-data-"+todayISO()+".json",JSON.stringify({version:1,exportedAt:new Date().toISOString(),records:STATE.records},null,2));
+    toast("Đã xuất "+STATE.records.length+" hồ sơ ra file JSON");
+}
+function exportOne(id){
+    const r=getRec(id);if(!r)return;
+    download("pccc-"+r.type+"-"+todayISO()+".json",JSON.stringify({version:1,record:r},null,2));
+    toast("Đã xuất hồ sơ ra JSON");
+}
+function importAll(input){
+    const file=input.files[0];if(!file)return;
+    const reader=new FileReader();
+    reader.onload=e=>{
+        try{
+            const o=JSON.parse(e.target.result);
+            let incoming=[];
+            if(Array.isArray(o.records))incoming=o.records;
+            else if(o.record)incoming=[o.record];
+            else if(Array.isArray(o))incoming=o;
+            else throw new Error("Không nhận dạng được cấu trúc JSON");
+            incoming=incoming.filter(r=>r&&r.type&&TYPES[r.type]&&r.data);
+            if(!incoming.length){toast("File không có hồ sơ hợp lệ");return;}
+            const mode=confirm("Nhập "+incoming.length+" hồ sơ.\n\n• OK = Gộp thêm vào dữ liệu hiện có\n• Cancel = Thay thế toàn bộ dữ liệu hiện có");
+            if(mode){
+                const existing=new Set(STATE.records.map(r=>r.id));
+                incoming.forEach(r=>{if(existing.has(r.id))r.id=uid();STATE.records.unshift(r);});
+            }else{STATE.records=incoming;}
+            persistAll();markAllDirty();STATE.view="welcome";STATE.current=null;STATE.editingId=null;STATE.dirty=false;renderAll();
+            toast("Đã nhập "+incoming.length+" hồ sơ");
+        }catch(err){alert("Lỗi đọc file JSON: "+err.message);}
+        input.value="";
+    };
+    reader.readAsText(file,"utf-8");
+}
+
+/* =========================================================
+   ĐỒNG BỘ SERVER (lưu trữ chung) — đẩy lên server khi bấm Lưu
+========================================================= */
+const SYNC=(function(){
+    let base=null, enabled=true;
+    if(typeof window!=="undefined" && window.PCCC_SYNC){
+        if(window.PCCC_SYNC.url)base=String(window.PCCC_SYNC.url).replace(/\/+$/,"");
+        if(window.PCCC_SYNC.enabled===false)enabled=false;
+    }
+    if(!base && (location.protocol==="http:"||location.protocol==="https:")) base=location.origin+"/api";
+    return {base: enabled?base:null};
+})();
+let _syncing=false,_syncTimer=null;
+function getDirty(){try{return new Set(JSON.parse(localStorage.getItem("pccc_dirty")||"[]"));}catch(e){return new Set();}}
+function saveDirtySet(s){localStorage.setItem("pccc_dirty",JSON.stringify([...s]));}
+function markDirty(id){const s=getDirty();s.add(id);saveDirtySet(s);scheduleSync();}
+function markAllDirty(){const s=getDirty();STATE.records.forEach(r=>s.add(r.id));saveDirtySet(s);scheduleSync();}
+function getTombstones(){try{return JSON.parse(localStorage.getItem("pccc_tomb")||"[]");}catch(e){return[];}}
+function addTombstone(id){const t=getTombstones();if(!t.find(x=>x.id===id))t.push({id,deleted:true,updatedAt:new Date().toISOString()});localStorage.setItem("pccc_tomb",JSON.stringify(t));const d=getDirty();d.delete(id);saveDirtySet(d);}
+function scheduleSync(){if(!SYNC.base)return;clearTimeout(_syncTimer);_syncTimer=setTimeout(()=>syncNow(false),2500);}
+function setSyncStatus(s){const b=document.getElementById("syncBtn");if(!b)return;b.style.display="";b.textContent=s==="syncing"?"☁ Đang đồng bộ…":(s==="err"?"⚠ Lỗi đồng bộ":"☁ Đồng bộ");}
+async function syncNow(manual){
+    if(!SYNC.base){if(manual)toast("Chưa bật đồng bộ — hãy mở app qua server (http://localhost:3000)");return;}
+    if(_syncing){if(manual)toast("Đang đồng bộ…");return;}
+    _syncing=true;setSyncStatus("syncing");
+    try{
+        const since=localStorage.getItem("pccc_lastsync")||null;
+        const dirty=getDirty();
+        const sentRecs=STATE.records.filter(r=>dirty.has(r.id));
+        const sentTombs=getTombstones();
+        const res=await fetch(SYNC.base+"/sync",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({since,records:sentRecs.concat(sentTombs)})});
+        if(!res.ok)throw new Error("HTTP "+res.status);
+        const out=await res.json();
+        let applied=0;
+        for(const rec of (out.changed||[])){
+            if(STATE.current&&rec.id===STATE.current.id)continue; // không ghi đè hồ sơ đang mở
+            const idx=STATE.records.findIndex(r=>r.id===rec.id);
+            if(rec.deleted){ if(idx>=0){STATE.records.splice(idx,1);applied++;} idbDel(rec.id).catch(()=>{}); }
+            else { if(idx<0){STATE.records.push(rec);idbPut(rec).catch(()=>{});applied++;} else if(String(rec.updatedAt||"")>=String(STATE.records[idx].updatedAt||"")){STATE.records[idx]=rec;idbPut(rec).catch(()=>{});applied++;} }
+        }
+        const d=getDirty();sentRecs.forEach(r=>d.delete(r.id));saveDirtySet(d);
+        const remain=getTombstones().filter(t=>!sentTombs.find(s=>s.id===t.id));localStorage.setItem("pccc_tomb",JSON.stringify(remain));
+        if(out.now)localStorage.setItem("pccc_lastsync",out.now);
+        setSyncStatus("ok");
+        if(applied)renderAll();
+        if(manual)toast("Đồng bộ xong"+(applied?(" · "+applied+" cập nhật"):""));
+    }catch(e){setSyncStatus("err");if(manual)toast("Lỗi đồng bộ: "+e.message);console.warn("sync",e);}
+    finally{_syncing=false;}
+}
+function initSync(){
+    const b=document.getElementById("syncBtn");
+    const al=document.getElementById("adminLink");
+    if(!SYNC.base){if(b)b.style.display="none";if(al)al.style.display="none";return;}
+    if(al)al.style.display="";
+    if(b){b.style.display="";b.textContent="☁ Đồng bộ";}
+    syncNow(false);
+    setInterval(()=>{if(!document.hidden)syncNow(false);},60000);
+}
+
+/* =========================================================
+   PRINT
+========================================================= */
+function closeEditor(){guardUnsaved();STATE.current=null;STATE.editingId=null;STATE.dirty=false;STATE.view="welcome";renderMain();renderList();}
+function printRecord(id){
+    const r=getRec(id);if(!r)return;
+    document.getElementById("print-root").innerHTML=renderPrint(r);
+    window.print();
+}
+function pHeaderTop(r){
+    const t=TYPES[r.type],d=r.data,unit=d.donVi||"";
+    const docno=d.soBienBan||d.soKeHoach||d.maTaiLieu||d.soVanBan||"";
+    const place=fmtDate(d.ngay);
+    return `<table class="ptop"><tr>
+        <td style="width:44%"><div class="org">CÔNG TY ${esc(unit)}</div><div class="org">ĐỘI PCCC &amp; MẠNG LƯỚI ATVSV</div><span class="rule"></span><div>Số: ${esc(docno||"……/"+t.code)}</div></td>
+        <td style="width:56%"><div class="org">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</div><div style="font-weight:bold">Độc lập - Tự do - Hạnh phúc</div><span class="rule"></span><div style="font-style:italic">${esc(unit?unit:"…")}, ngày ${place==="—"?"… tháng … năm …":esc(place)}</div></td>
+    </tr></table>`;
+}
+function pSigns(r){
+    const s=TYPES[r.type].signs;const w=(100/s.length).toFixed(2);
+    return `<table class="psign"><tr>${s.map(([role,hint])=>`<td style="width:${w}%"><div class="role">${esc(role)}</div><div class="hint">${esc(hint)}</div><div class="sp"></div></td>`).join("")}</tr></table>`;
+}
+function pField(label,val){if(!val)return "";return `<p><strong>${esc(label)}:</strong> ${nl2br(val)}</p>`;}
+function pImages(imgs){
+    if(!imgs||!imgs.length)return "";
+    const cells=imgs.map(im=>`<td style="width:50%;text-align:center;vertical-align:top;padding:6px;border:none">
+        <img src="${im.dataUrl}" style="max-width:100%;max-height:230px;border:1px solid #888"><div style="font-size:12px;font-style:italic;margin-top:3px">${esc(im.caption||"")}</div></td>`);
+    let rows="";
+    for(let i=0;i<cells.length;i+=2){rows+=`<tr>${cells[i]}${cells[i+1]||'<td style="border:none"></td>'}</tr>`;}
+    return `<table style="width:100%;border-collapse:collapse;margin:8px 0;page-break-inside:auto">${rows}</table>`;
+}
+function pList(f,rows){
+    if(!rows||!rows.length)return "";
+    const head=f.cols.map(c=>`<th>${esc(c.l)}</th>`).join("");
+    const body=rows.map((row,i)=>`<tr><td style="text-align:center">${i+1}</td>${f.cols.map(c=>`<td>${nl2br(row[c.n]||"")}</td>`).join("")}</tr>`).join("");
+    return `<table class="pg"><thead><tr><th style="width:34px">TT</th>${head}</tr></thead><tbody>${body}</tbody></table>`;
+}
+function renderPrint(r){
+    const t=TYPES[r.type],d=r.data;
+    let inner="";
+    if(r.type==="hoatdong"){
+        inner=renderPrintMatrix(d);
+    }else{
+        // schema-driven body
+        t.fields.forEach(f=>{
+            if(f.s){inner+=`<h3>${esc(f.s)}</h3>`;return;}
+            if(["donVi","soBienBan","soKeHoach","maTaiLieu","soVanBan","ngay"].includes(f.n))return; // shown in header
+            if(f.t==="list"){inner+=pList(f,d[f.n]);return;}
+            if(f.t==="images"){inner+=pImages(d[f.n]);return;}
+            inner+=pField(f.l,d[f.n]);
+        });
+    }
+    const title=t.printTitle+(r.type==="hoatdong"?(" "+(d.nam||"")):"");
+    const sub=t.subtitle?`<p class="psub">${esc(t.subtitle)}</p>`:"";
+    return `<div class="pdoc">${pHeaderTop(r)}<h1>${esc(title)}</h1>${sub}${inner}${pSigns(r)}</div>`;
+}
+function renderPrintMatrix(d){
+    const mh=MONTHS.map(m=>`<th>${m}</th>`).join("");
+    const rows=(d.items||[]).map((it,i)=>{
+        const cells=MONTHS.map(m=>{const v=it.months[m]||"";return `<td>${v==="KH"?"○":(v==="TH"?"●":"")}</td>`;}).join("");
+        return `<tr><td>${i+1}</td><td class="l">${esc(it.hangMuc)}</td><td>${esc(it.tanSuat)}</td><td>${esc(it.benNgoai)}</td><td>${esc(it.noiBo)}</td>${cells}</tr>`;
+    }).join("");
+    return `<p style="text-align:center;font-style:italic">Đơn vị: ${esc(d.donVi||"")} — Năm ${esc(d.nam||"")}</p>
+    <p style="font-size:12px"><b>Chú thích:</b> ○ = Kế hoạch · ● = Đã thực hiện.</p>
+    <table class="mxp"><thead><tr><th>No.</th><th>Hạng mục</th><th>Tần suất</th><th>Bên ngoài</th><th>Nội bộ</th>${mh}</tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+/* =========================================================
+   NEW MENU
+========================================================= */
+function buildNewMenu(){
+    document.getElementById("newMenu").innerHTML=roleTypes().map(k=>`<button onclick="createRecord('${k}');toggleNewMenu()"><span style="font-size:18px">${TYPES[k].icon}</span> ${esc(TYPES[k].label)}</button>`).join("");
+}
+function toggleNewMenu(ev){if(ev)ev.stopPropagation();document.getElementById("newMenu").classList.toggle("open");}
+document.addEventListener("click",()=>document.getElementById("newMenu").classList.remove("open"));
+
+/* =========================================================
+   INIT
+========================================================= */
+async function init(){
+    applyRoleUI();
+    buildNewMenu();
+    try{
+        await idbOpen();
+        let recs=await idbGetAll();
+        if(!recs.length){
+            // one-time migration from old localStorage store
+            try{
+                const raw=localStorage.getItem(STORE_KEY);
+                if(raw){const o=JSON.parse(raw);if(o&&o.records&&o.records.length){await idbBulk(o.records);recs=o.records;toast("Đã chuyển "+o.records.length+" hồ sơ cũ sang IndexedDB");}}
+            }catch(e){console.warn("migration",e);}
+        }
+        STATE.records=recs;
+    }catch(e){
+        console.error("IndexedDB không khả dụng:",e);
+        alert("Trình duyệt không hỗ trợ/đang chặn IndexedDB. Dữ liệu sẽ không lưu được. Hãy mở bằng Chrome/Edge ở chế độ thường (không ẩn danh).");
+    }
+    await loadServerConfig();
+    if(MEMBERS)tryRestoreUser();
+    applyRoleUI();buildNewMenu();
+    renderAll();
+    if(MEMBERS && !CURRENT_USER)showLogin();
+    initSync();
+}
+async function loadServerConfig(){
+    if(!SYNC.base)return;
+    try{
+        const r=await fetch(SYNC.base+"/config");
+        if(r.ok){
+            const c=await r.json();
+            if(c && Array.isArray(c.members) && c.members.length){
+                MEMBERS=c.members;
+                window.PCCC_MEMBERS={company:c.company||((window.PCCC_MEMBERS||{}).company||""),members:c.members};
+            }
+        }
+    }catch(e){ /* không có server config — dùng pccc_members.js */ }
+}
+init();
+window.addEventListener("beforeunload",e=>{if(STATE.dirty){e.preventDefault();e.returnValue="";}});
+</script>
+</body>
+</html>

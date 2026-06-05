@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quản trị hệ thống — PCCC</title>
+<style>
+    :root{--primary:#1b365d;--primary2:#2e5b88;--accent:#c0392b;--ok:#1e7e44;--bg:#eef2f7;--surface:#fff;--line:#d9e0e8;--soft:#f4f7fb;--ink:#27313c;--muted:#5b6b7c;--warn:#9a6a00;}
+    *{box-sizing:border-box;}
+    body{margin:0;font-family:Arial,"Segoe UI",sans-serif;color:var(--ink);background:var(--bg);font-size:14px;}
+    button{font-family:inherit;cursor:pointer;}
+    .btn{border:1px solid var(--primary);background:var(--primary);color:#fff;border-radius:6px;padding:8px 14px;font-size:13px;font-weight:bold;}
+    .btn:hover{background:var(--primary2);}
+    .btn.ghost{background:#fff;color:var(--primary);}
+    .btn.ghost:hover{background:var(--soft);}
+    .btn.danger{background:#fff;color:var(--accent);border-color:var(--accent);}
+    .btn.danger:hover{background:#fdf2f1;}
+    .btn.ok{background:var(--ok);border-color:var(--ok);}
+    .btn.sm{padding:5px 10px;font-size:12px;}
+    .topbar{background:linear-gradient(135deg,var(--primary),var(--primary2));color:#fff;display:flex;align-items:center;gap:12px;padding:14px 22px;}
+    .topbar h1{font-size:16px;margin:0;text-transform:uppercase;}
+    .topbar .spacer{flex:1;}
+    .wrap{max-width:960px;margin:24px auto;padding:0 16px;}
+    .card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:22px 24px;margin-bottom:18px;}
+    .card h2{margin:0 0 14px;color:var(--primary);font-size:16px;border-bottom:1px solid var(--line);padding-bottom:8px;}
+    label{font-size:12.5px;font-weight:bold;color:var(--muted);display:block;margin-bottom:5px;}
+    input,select{border:1px solid var(--line);border-radius:6px;padding:8px 10px;font-size:13.5px;font-family:inherit;width:100%;}
+    input:focus,select:focus{outline:none;border-color:var(--primary2);box-shadow:0 0 0 2px rgba(46,91,136,.15);}
+    table{width:100%;border-collapse:collapse;font-size:13px;}
+    th{background:var(--soft);color:var(--primary);text-align:left;padding:8px;font-size:12px;border-bottom:1px solid var(--line);}
+    td{padding:5px 6px;border-bottom:1px solid var(--line);vertical-align:top;}
+    td input,td select{padding:5px 7px;font-size:12.5px;}
+    .rowdel{border:none;background:transparent;color:var(--accent);font-size:16px;font-weight:bold;cursor:pointer;}
+    .tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:8px;}
+    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;}
+    .muted{color:var(--muted);font-size:12.5px;}
+    .danger-zone{border-color:var(--accent);}
+    .danger-zone h2{color:var(--accent);}
+    /* login */
+    .login{position:fixed;inset:0;background:rgba(15,25,45,.8);display:flex;align-items:center;justify-content:center;padding:20px;z-index:50;}
+    .login.hidden{display:none;}
+    .login-box{background:#fff;border-radius:14px;padding:30px 32px;max-width:400px;width:100%;text-align:center;box-shadow:0 12px 44px rgba(0,0,0,.35);}
+    .login-box .logo{width:54px;height:54px;margin:0 auto 12px;background:linear-gradient(135deg,var(--primary),var(--primary2));color:#fff;border-radius:11px;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:13px;}
+    .login-box h2{margin:0 0 6px;color:var(--primary);font-size:18px;}
+    .login-box p{margin:0 0 16px;color:var(--muted);font-size:13px;}
+    .login-box input{margin-bottom:12px;text-align:center;}
+    .err{color:var(--accent);font-size:12.5px;min-height:16px;}
+    .toast{position:fixed;bottom:20px;right:20px;background:var(--primary);color:#fff;padding:11px 16px;border-radius:8px;font-size:13px;box-shadow:0 4px 14px rgba(0,0,0,.2);opacity:0;transform:translateY(10px);transition:.25s;z-index:60;}
+    .toast.show{opacity:1;transform:none;}
+    .hidden{display:none;}
+    @media(max-width:640px){.tn-hide{display:none;}}
+</style>
+</head>
+<body>
+
+<!-- Đăng nhập token -->
+<div class="login" id="login">
+    <div class="login-box">
+        <div class="logo">PCCC</div>
+        <h2>Trang quản trị</h2>
+        <p>Nhập token quản trị để vào cấu hình hệ thống.</p>
+        <input type="password" id="tokenInput" placeholder="Admin token..." onkeydown="if(event.key==='Enter')doLogin()">
+        <div class="err" id="loginErr"></div>
+        <button class="btn" style="width:100%" onclick="doLogin()">Đăng nhập →</button>
+        <p class="muted" style="margin-top:14px">Token đặt qua biến môi trường <b>ADMIN_TOKEN</b> (Coolify) hoặc xem ở log server.</p>
+    </div>
+</div>
+
+<!-- Giao diện quản trị -->
+<div id="app" class="hidden">
+    <div class="topbar">
+        <h1>⚙ Quản trị hệ thống PCCC</h1>
+        <div class="spacer"></div>
+        <a class="btn ghost sm" href="./" target="_blank" style="text-decoration:none">↗ Mở ứng dụng</a>
+        <button class="btn ghost sm" onclick="logout()">Đăng xuất</button>
+    </div>
+    <div class="wrap">
+
+        <div class="card">
+            <h2>Cài đặt chung</h2>
+            <label>Tên đơn vị (hiển thị ở màn hình chọn tên)</label>
+            <input id="company" placeholder="Công ty...">
+        </div>
+
+        <div class="card">
+            <h2>Thành viên &amp; vai trò</h2>
+            <p class="muted">role: <b>manager</b> = Đội trưởng/Quản lý (toàn quyền) · <b>member</b> = Thành viên (chỉ tạo báo cáo).</p>
+            <div class="tablewrap">
+                <table id="memTable">
+                    <thead><tr>
+                        <th>Họ tên</th><th class="tn-hide">MSNV</th><th>Đơn vị</th>
+                        <th class="tn-hide">Bộ phận</th><th class="tn-hide">Chức vụ</th><th>Vai trò</th><th></th>
+                    </tr></thead>
+                    <tbody id="memBody"></tbody>
+                </table>
+            </div>
+            <div class="row" style="margin-top:12px">
+                <button class="btn ghost sm" onclick="addMember()">＋ Thêm thành viên</button>
+                <div class="spacer" style="flex:1"></div>
+                <button class="btn ok" onclick="saveConfig()">💾 Lưu cấu hình</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Dữ liệu hệ thống</h2>
+            <p class="muted">Đang lưu: <b id="recCount">…</b> hồ sơ trên server.</p>
+            <div class="row">
+                <button class="btn ghost" onclick="downloadBackup()">⬇ Tải sao lưu (JSON)</button>
+                <label class="btn ghost" style="text-align:center">⬆ Khôi phục từ JSON
+                    <input type="file" accept="application/json,.json" style="display:none" onchange="restoreBackup(this)">
+                </label>
+            </div>
+        </div>
+
+        <div class="card" id="tokenCard">
+            <h2>Đổi token quản trị</h2>
+            <p class="muted" id="tokenNote"></p>
+            <div class="row">
+                <div style="flex:1;min-width:200px"><label>Token mới (≥ 6 ký tự)</label><input id="newToken" placeholder="Token mới..."></div>
+                <button class="btn" onclick="changeToken()">Đổi token</button>
+            </div>
+        </div>
+
+        <div class="card danger-zone">
+            <h2>⚠ Vùng nguy hiểm</h2>
+            <p class="muted">Xóa toàn bộ hồ sơ trên server (không thể hoàn tác). Nên tải sao lưu trước.</p>
+            <button class="btn danger" onclick="wipeAll()">🗑 Xóa toàn bộ dữ liệu</button>
+        </div>
+
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API = (location.origin && location.origin.startsWith("http")) ? (location.origin + "/api") : null;
+let TOKEN = sessionStorage.getItem("pccc_admin_token") || "";
+let ENV_TOKEN = false;
+
+function esc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
+function toast(m){const t=document.getElementById("toast");t.textContent=m;t.classList.add("show");clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove("show"),2200);}
+function authHeaders(){return {"Content-Type":"application/json","Authorization":"Bearer "+TOKEN};}
+
+async function api(path, method, body){
+    const res = await fetch(API+path, {method:method||"GET", headers:authHeaders(), body: body?JSON.stringify(body):undefined});
+    if(res.status===401){ logout(); throw new Error("Token không hợp lệ"); }
+    if(!res.ok){ let e="HTTP "+res.status; try{const j=await res.json(); if(j.error)e=j.error;}catch(_){} throw new Error(e); }
+    return res.json();
+}
+
+async function doLogin(){
+    const t=document.getElementById("tokenInput").value.trim();
+    const err=document.getElementById("loginErr"); err.textContent="";
+    if(!API){ err.textContent="Hãy mở trang này qua server (http://localhost:3000/admin.html)"; return; }
+    if(!t){ err.textContent="Nhập token"; return; }
+    try{
+        const res=await fetch(API+"/admin/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({token:t})});
+        const j=await res.json();
+        if(!res.ok||!j.ok){ err.textContent=j.error||"Sai token"; return; }
+        TOKEN=t; ENV_TOKEN=!!j.envToken; sessionStorage.setItem("pccc_admin_token",t);
+        enterAdmin();
+    }catch(e){ err.textContent="Lỗi kết nối: "+e.message; }
+}
+function logout(){ TOKEN=""; sessionStorage.removeItem("pccc_admin_token"); document.getElementById("app").classList.add("hidden"); document.getElementById("login").classList.remove("hidden"); }
+
+async function enterAdmin(){
+    document.getElementById("login").classList.add("hidden");
+    document.getElementById("app").classList.remove("hidden");
+    await loadConfig();
+    await loadStats();
+}
+
+let MEMBERS=[];
+async function loadConfig(){
+    const c=await api("/admin/config");
+    document.getElementById("company").value=c.company||"";
+    MEMBERS=Array.isArray(c.members)?c.members:[];
+    renderMembers();
+    ENV_TOKEN=!!c.envToken;
+    document.getElementById("tokenNote").textContent = ENV_TOKEN
+        ? "Token đang đặt bằng biến môi trường ADMIN_TOKEN — đổi tại Coolify, không đổi ở đây."
+        : "Token sinh tự động, lưu trên server. Có thể đặt token mới bên dưới.";
+    document.getElementById("newToken").disabled = ENV_TOKEN;
+}
+async function loadStats(){
+    try{ const s=await api("/admin/stats"); document.getElementById("recCount").textContent=s.records; }catch(e){}
+}
+const UNITS=["VFM","DQH"]; const ROLES=[["member","Thành viên"],["manager","Quản lý"]];
+function renderMembers(){
+    const b=document.getElementById("memBody");
+    b.innerHTML=MEMBERS.map((m,i)=>`<tr>
+        <td><input value="${esc(m.name)}" oninput="setM(${i},'name',this.value)"></td>
+        <td class="tn-hide"><input value="${esc(m.msnv)}" oninput="setM(${i},'msnv',this.value)" style="width:80px"></td>
+        <td><select onchange="setM(${i},'unit',this.value)">${["",...UNITS].map(u=>`<option ${u===m.unit?"selected":""}>${u}</option>`).join("")}</select></td>
+        <td class="tn-hide"><input value="${esc(m.department)}" oninput="setM(${i},'department',this.value)"></td>
+        <td class="tn-hide"><input value="${esc(m.position)}" oninput="setM(${i},'position',this.value)"></td>
+        <td><select onchange="setM(${i},'role',this.value)">${ROLES.map(([v,l])=>`<option value="${v}" ${v===m.role?"selected":""}>${l}</option>`).join("")}</select></td>
+        <td style="text-align:center"><button class="rowdel" onclick="delMember(${i})">✕</button></td>
+    </tr>`).join("") || `<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:14px">Chưa có thành viên. Bấm “＋ Thêm thành viên”.</td></tr>`;
+}
+function setM(i,k,v){MEMBERS[i][k]=v;}
+function addMember(){MEMBERS.push({name:"",msnv:"",unit:"VFM",department:"",position:"",role:"member"});renderMembers();}
+function delMember(i){MEMBERS.splice(i,1);renderMembers();}
+
+async function saveConfig(){
+    const company=document.getElementById("company").value.trim();
+    const members=MEMBERS.filter(m=>String(m.name||"").trim());
+    try{
+        const r=await api("/admin/config","POST",{company,members});
+        toast("Đã lưu cấu hình ("+r.count+" thành viên)");
+    }catch(e){ toast("Lỗi: "+e.message); }
+}
+
+async function downloadBackup(){
+    try{
+        const d=await api("/admin/db");
+        const blob=new Blob([JSON.stringify({version:1,exportedAt:new Date().toISOString(),records:d.records},null,2)],{type:"application/json"});
+        const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="pccc-server-backup.json";a.click();setTimeout(()=>URL.revokeObjectURL(a.href),200);
+        toast("Đã tải sao lưu ("+(d.records||[]).length+" hồ sơ)");
+    }catch(e){ toast("Lỗi: "+e.message); }
+}
+function restoreBackup(input){
+    const f=input.files[0]; input.value="";
+    if(!f)return;
+    if(!confirm("Khôi phục sẽ THAY THẾ toàn bộ dữ liệu trên server. Tiếp tục?"))return;
+    const rd=new FileReader();
+    rd.onload=async e=>{
+        try{
+            const o=JSON.parse(e.target.result);
+            const records=Array.isArray(o.records)?o.records:(Array.isArray(o)?o:null);
+            if(!records)throw new Error("File không có records[]");
+            const r=await api("/admin/db","POST",{records});
+            toast("Đã khôi phục "+r.count+" hồ sơ"); loadStats();
+        }catch(err){ toast("Lỗi: "+err.message); }
+    };
+    rd.readAsText(f,"utf-8");
+}
+async function wipeAll(){
+    if(!confirm("Xóa TOÀN BỘ hồ sơ trên server?"))return;
+    if(!confirm("Chắc chắn? Hành động KHÔNG thể hoàn tác."))return;
+    try{ await api("/admin/wipe","POST",{}); toast("Đã xóa toàn bộ dữ liệu"); loadStats(); }
+    catch(e){ toast("Lỗi: "+e.message); }
+}
+async function changeToken(){
+    const nt=document.getElementById("newToken").value.trim();
+    if(nt.length<6){ toast("Token tối thiểu 6 ký tự"); return; }
+    try{
+        await api("/admin/token","POST",{token:nt});
+        TOKEN=nt; sessionStorage.setItem("pccc_admin_token",nt);
+        document.getElementById("newToken").value="";
+        toast("Đã đổi token");
+    }catch(e){ toast("Lỗi: "+e.message); }
+}
+
+// tự đăng nhập nếu đã có token trong phiên
+if(TOKEN){ api("/admin/config").then(()=>enterAdmin()).catch(()=>logout()); }
+</script>
+</body>
+</html>

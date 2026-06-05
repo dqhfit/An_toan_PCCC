@@ -1,0 +1,16 @@
+{
+  "company": "Công ty TNHH SX & TM VFM — DQH",
+  "members": [
+    { "name": "Chu Văn Long",           "msnv": "002495", "unit": "VFM", "department": "Bảo trì",     "position": "Đội trưởng PCCC",        "role": "manager" },
+    { "name": "Đỗ Hữu Thiện",           "msnv": "000719", "unit": "VFM", "department": "Văn phòng",   "position": "Đội phó PCCC",           "role": "manager" },
+    { "name": "Hồ Đình Khương",         "msnv": "003558", "unit": "DQH", "department": "Bảo trì",     "position": "Đội trưởng PCCC (DQH)",  "role": "manager" },
+    { "name": "Văn Quý Hộp",            "msnv": "",       "unit": "DQH", "department": "Sản xuất",    "position": "Đội trưởng ATVSV (DQH)", "role": "manager" },
+    { "name": "Trần Đức Bảo",           "msnv": "",       "unit": "VFM", "department": "IT",          "position": "Đội viên", "role": "member" },
+    { "name": "Khổng Thị Ái",           "msnv": "",       "unit": "VFM", "department": "Kho sơn",     "position": "Đội viên", "role": "member" },
+    { "name": "Huỳnh Phương Thúy",      "msnv": "",       "unit": "VFM", "department": "Kho ngũ kim", "position": "Đội viên", "role": "member" },
+    { "name": "Lê Thị Ngọc Trân",       "msnv": "",       "unit": "VFM", "department": "Sơn",         "position": "Đội viên", "role": "member" },
+    { "name": "Nguyễn Văn Trọng",       "msnv": "",       "unit": "VFM", "department": "Thành phẩm",  "position": "Đội viên", "role": "member" },
+    { "name": "Lê Văn Chốt",            "msnv": "",       "unit": "VFM", "department": "Bảo trì",     "position": "Đội viên", "role": "member" },
+    { "name": "Nguyễn Trần Trung Hiếu", "msnv": "",       "unit": "VFM", "department": "Bảo trì",     "position": "Đội viên", "role": "member" }
+  ]
+}

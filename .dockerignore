@@ -1,0 +1,10 @@
+.git
+.gitignore
+node_modules
+pccc_db.json
+pccc_db.json.tmp
+_*
+*.log
+*.tmp
+Thumbs.db
+.DS_Store

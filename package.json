@@ -1,0 +1,12 @@
+{
+  "name": "pccc-app",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Ung dung Quan ly Ho so An toan - PCCC (VFM & DQH) — server tinh + API dong bo",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

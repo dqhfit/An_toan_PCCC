@@ -1,0 +1,8 @@
+pccc_db.json
+pccc_db.json.tmp
+_*
+*.log
+*.tmp
+node_modules
+.DS_Store
+Thumbs.db
