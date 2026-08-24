@@ -637,6 +637,64 @@ const TYPES = {
       ]},
     ]
   },
+  ungpho:{
+    label:"Phân công ứng phó cháy nổ", icon:"🚨", code:"PC-UPSC",
+    printTitle:"DANH SÁCH PHÂN CÔNG ỨNG PHÓ SỰ CỐ CHÁY NỔ",
+    subtitle:"(Theo Quy trình ứng phó sự cố cháy nổ — NS.QT.04)",
+    signs:[["Soạn thảo","(Ký, ghi rõ họ tên)"],["Phê duyệt","(Ký, đóng dấu)"]],
+    title:d=>"Phân công ứng phó sự cố cháy nổ ("+(d.donVi||"")+")",
+    fields:[
+      {s:"Thông tin chung"},
+      {n:"donVi",l:"Đơn vị",t:"select",dyn:"companies"},
+      {n:"soVanBan",l:"Số văn bản",t:"text"},
+      {n:"canCu",l:"Căn cứ",t:"text",def:"Quy trình ứng phó sự cố cháy nổ NS.QT.04 ngày 03/07/2026"},
+      {n:"diemTapKet",l:"Điểm tập kết",t:"text",ph:"vd: Sân trước cổng nhà máy"},
+      {n:"apDung",l:"Áp dụng từ",t:"text",ph:"vd: 07/2026"},
+      {n:"ngay",l:"Ngày lập",t:"date",def:todayISO},
+      {n:"nguoiLap",l:"Người lập",t:"text",person:true},
+      {s:"Danh sách phân công theo lưu trình"},
+      {n:"phanCong",l:"",t:"list",cols:[
+        {n:"nhiemVu",l:"Nhiệm vụ",w:"165px"},{n:"hoTen",l:"Người phụ trách",w:"150px",pick:"name"},{n:"sdt",l:"Điện thoại",w:"100px"},{n:"noiDung",l:"Nội dung thực hiện"},{n:"ghiChu",l:"Ghi chú",w:"110px"}
+      ],rows:[
+        {nhiemVu:"1. Phát hiện & báo động",hoTen:"Người phát hiện / Toàn thể CNV",sdt:"",noiDung:"Hô to CHÁY CHÁY CHÁY; bấm chuông báo cháy khẩn cấp hoặc gõ kẻng báo cháy gần nhất.",ghiChu:""},
+        {nhiemVu:"2. Chỉ huy — kiểm soát & liên hệ 114, 115",hoTen:"Đội trưởng",sdt:"",noiDung:"Kiểm soát tình hình; gọi 115 nếu có người bị thương/mắc kẹt; gọi 114 báo Cảnh sát PCCC, cung cấp địa chỉ và quy mô đám cháy.",ghiChu:""},
+        {nhiemVu:"Chỉ huy dự phòng",hoTen:"Đội phó",sdt:"",noiDung:"Thay thế chỉ huy khi Đội trưởng vắng mặt.",ghiChu:""},
+        {nhiemVu:"3. Cắt điện",hoTen:"Đội viên (Bảo trì)",sdt:"",noiDung:"Ngắt cầu dao khu vực cháy. Không ngắt điện hệ thống báo cháy, chiếu sáng sự cố.",ghiChu:""},
+        {nhiemVu:"4. Giải phóng mặt bằng",hoTen:"Đội viên",sdt:"",noiDung:"Di chuyển hàng hóa, vật cản đường xe và người tiếp cận đám cháy.",ghiChu:""},
+        {nhiemVu:"5. Sơ tán — Tập kết & điểm danh",hoTen:"Tổ trưởng bộ phận / ATVSV",sdt:"",noiDung:"Sơ tán người theo lối thoát hiểm đến điểm tập kết; xếp hàng ngay ngắn, điểm danh theo bộ phận; báo ngay Ban chỉ huy nếu thiếu người hoặc nghi có người mắc kẹt.",ghiChu:"Cúi thấp người, dùng khăn/vải ướt che mũi miệng nếu có khói"},
+        {nhiemVu:"6. Chữa cháy",hoTen:"Các đội viên PCCC còn lại",sdt:"",noiDung:"Tiến hành chữa cháy; chọn đúng phương tiện chữa cháy. Không dùng nước để chữa cháy điện hoặc hóa chất.",ghiChu:""},
+        {nhiemVu:"7. Xử lý sau sự cố",hoTen:"Chỉ huy / Ban giám đốc",sdt:"",noiDung:"Xác nhận đám cháy đã xử lý hoàn toàn; thông báo trở lại vị trí làm việc; bảo vệ hiện trường phục vụ điều tra (nếu cần); báo cáo nhanh Ban giám đốc; điều tra nguyên nhân, đề xuất biện pháp khắc phục; cập nhật phương án PCCC & CNCH.",ghiChu:""},
+        {nhiemVu:"8. Lưu hồ sơ",hoTen:"Phòng Nhân sự / HCNS",sdt:"",noiDung:"Soạn thông báo, đề xuất khen thưởng người có công chữa cháy; lưu hồ sơ sự cố.",ghiChu:""},
+      ]},
+      {s:"Phân công phụ trách theo khu vực"},
+      {n:"khuVucPC",l:"",t:"list",cols:[
+        {n:"khuVuc",l:"Khu vực",w:"160px"},{n:"hoTen",l:"Đội viên phụ trách",w:"170px",pick:"name"},{n:"boPhan",l:"Bộ phận",w:"110px"},{n:"nhiemVu",l:"Nhiệm vụ"},{n:"ghiChu",l:"Ghi chú",w:"110px"}
+      ],rows:[
+        {khuVuc:"Toàn nhà máy",hoTen:"Chu Văn Long",boPhan:"Bảo trì",nhiemVu:"Chỉ huy chung: điều phối ứng phó, liên hệ 114/115, xác nhận kết thúc sự cố.",ghiChu:"Đội trưởng — Cán bộ ATLĐ"},
+        {khuVuc:"Văn phòng",hoTen:"Đỗ Hữu Thiện",boPhan:"Văn phòng",nhiemVu:"Kiểm tra an toàn PCCC khu vực; khi có sự cố: hướng dẫn sơ tán, điểm danh nhân sự khu vực phụ trách.",ghiChu:"Đội phó — chỉ huy dự phòng"},
+        {khuVuc:"Kho sơn",hoTen:"Trần Đức Bảo",boPhan:"Kho sơn",nhiemVu:"Kiểm tra an toàn PCCC khu vực; khi có sự cố: hướng dẫn sơ tán, điểm danh nhân sự khu vực phụ trách.",ghiChu:"Khu vực hóa chất — không chữa cháy bằng nước"},
+        {khuVuc:"Kho ngũ kim",hoTen:"Khổng Thị Ái",boPhan:"Kho ngũ kim",nhiemVu:"Kiểm tra an toàn PCCC khu vực; khi có sự cố: hướng dẫn sơ tán, điểm danh nhân sự khu vực phụ trách.",ghiChu:""},
+        {khuVuc:"Sơn Balet",hoTen:"Huỳnh Phương Thúy",boPhan:"Sơn Balet",nhiemVu:"Kiểm tra an toàn PCCC khu vực; khi có sự cố: hướng dẫn sơ tán, điểm danh nhân sự khu vực phụ trách.",ghiChu:""},
+        {khuVuc:"Sơn Balet",hoTen:"Huỳnh Văn Động",boPhan:"Sơn Balet",nhiemVu:"Phối hợp kiểm tra khu vực; hỗ trợ sơ tán, điểm danh và chữa cháy ban đầu.",ghiChu:""},
+        {khuVuc:"Sơn Balet",hoTen:"Danh Su",boPhan:"Sơn Balet",nhiemVu:"Phối hợp kiểm tra khu vực; hỗ trợ sơ tán, điểm danh và chữa cháy ban đầu.",ghiChu:""},
+        {khuVuc:"Sơn Balet",hoTen:"Đoàn Trung Toàn",boPhan:"Sơn Balet",nhiemVu:"Phối hợp kiểm tra khu vực; hỗ trợ sơ tán, điểm danh và chữa cháy ban đầu.",ghiChu:""},
+        {khuVuc:"Sơn Balet",hoTen:"Võ Hoàng Nam",boPhan:"Sơn Balet",nhiemVu:"Phối hợp kiểm tra khu vực; hỗ trợ sơ tán, điểm danh và chữa cháy ban đầu.",ghiChu:""},
+        {khuVuc:"Sơn Balet",hoTen:"Nguyễn Văn Liêm",boPhan:"Sơn Balet",nhiemVu:"Phối hợp kiểm tra khu vực; hỗ trợ sơ tán, điểm danh và chữa cháy ban đầu.",ghiChu:""},
+        {khuVuc:"Sơn treo",hoTen:"Nguyễn Văn Quý",boPhan:"Sơn treo",nhiemVu:"Kiểm tra an toàn PCCC khu vực; khi có sự cố: hướng dẫn sơ tán, điểm danh nhân sự khu vực phụ trách.",ghiChu:""},
+        {khuVuc:"Sơn treo",hoTen:"Hồ Thiên Lâm",boPhan:"Sơn treo",nhiemVu:"Phối hợp kiểm tra khu vực; hỗ trợ sơ tán, điểm danh và chữa cháy ban đầu.",ghiChu:""},
+        {khuVuc:"Sơn UV",hoTen:"Hoàng Xuân Nghĩa",boPhan:"Sơn UV",nhiemVu:"Kiểm tra an toàn PCCC khu vực; khi có sự cố: hướng dẫn sơ tán, điểm danh nhân sự khu vực phụ trách.",ghiChu:""},
+        {khuVuc:"Xưởng thành phẩm",hoTen:"Nguyễn Thị Minh Ngọc",boPhan:"Thành phẩm",nhiemVu:"Kiểm tra an toàn PCCC khu vực; khi có sự cố: hướng dẫn sơ tán, điểm danh nhân sự khu vực phụ trách.",ghiChu:""},
+        {khuVuc:"Xưởng thành phẩm",hoTen:"Lê Nhân Huy",boPhan:"Thành phẩm",nhiemVu:"Phối hợp kiểm tra khu vực; hỗ trợ sơ tán, điểm danh và chữa cháy ban đầu.",ghiChu:""},
+        {khuVuc:"Xưởng thành phẩm",hoTen:"Đinh Xuân Phúc",boPhan:"Thành phẩm",nhiemVu:"Phối hợp kiểm tra khu vực; hỗ trợ sơ tán, điểm danh và chữa cháy ban đầu.",ghiChu:""},
+        {khuVuc:"Xưởng thành phẩm",hoTen:"Phạm Phước Phát",boPhan:"Thành phẩm",nhiemVu:"Phối hợp kiểm tra khu vực; hỗ trợ sơ tán, điểm danh và chữa cháy ban đầu.",ghiChu:""},
+        {khuVuc:"Xưởng thành phẩm",hoTen:"Đỗ Duy Tiếp",boPhan:"Thành phẩm",nhiemVu:"Phối hợp kiểm tra khu vực; hỗ trợ sơ tán, điểm danh và chữa cháy ban đầu.",ghiChu:""},
+        {khuVuc:"Vòng ngoài",hoTen:"Nguyễn Văn Trọng",boPhan:"Bảo trì",nhiemVu:"Kiểm tra vòng ngoài: khuôn viên, tường rào, kho vật tư ngoài trời, trạm bơm, tủ điện tổng; hỗ trợ cắt điện và mở lối cho xe chữa cháy tiếp cận.",ghiChu:""},
+        {khuVuc:"Vòng ngoài",hoTen:"Lê Văn Chốt",boPhan:"Bảo trì",nhiemVu:"Kiểm tra vòng ngoài: khuôn viên, tường rào, kho vật tư ngoài trời, trạm bơm, tủ điện tổng; hỗ trợ cắt điện và mở lối cho xe chữa cháy tiếp cận.",ghiChu:""},
+      ]},
+      {s:"Ghi chú"},
+      {n:"ghiChu",l:"Ghi chú thêm",t:"textarea",full:true,def:"Đám cháy nhỏ: chữa cháy bằng phương tiện phù hợp loại đám cháy. Đám cháy lớn không kiểm soát được: sơ tán ngay theo hướng thoát hiểm.\nĐội viên Bảo trì phụ trách kiểm tra vòng ngoài; các đội viên còn lại phụ trách khu vực/bộ phận của mình."},
+    ]
+  },
   doivien:{
     label:"Danh sách đội viên PCCC", icon:"🧑‍🚒", code:"DS-PCCC",
     printTitle:"DANH SÁCH ĐỘI VIÊN PCCC & MẠNG LƯỚI ATVSV",
@@ -653,21 +711,32 @@ const TYPES = {
       {n:"thanhVien",l:"",t:"list",member:{hoTen:"name",msnv:"msnv",boPhan:"department",chucVu:"position"},cols:[
         {n:"hoTen",l:"Họ và tên"},{n:"msnv",l:"MSNV",w:"90px"},{n:"boPhan",l:"Bộ phận",w:"120px"},{n:"chucVu",l:"Chức vụ",w:"120px"},{n:"sdt",l:"Điện thoại",w:"110px"}
       ],rows:[
-        {hoTen:"Chu Văn Long",msnv:"002495",boPhan:"Bảo trì",chucVu:"Đội trưởng",sdt:""},
+        {hoTen:"Chu Văn Long",msnv:"002495",boPhan:"Bảo trì",chucVu:"Đội trưởng — Cán bộ ATLĐ",sdt:""},
         {hoTen:"Đỗ Hữu Thiện",msnv:"000719",boPhan:"Văn phòng",chucVu:"Đội phó",sdt:""},
         {hoTen:"Hồ Đình Khương",msnv:"003558",boPhan:"Bảo trì (DQH)",chucVu:"Đội trưởng (DQH)",sdt:""},
-        {hoTen:"Trần Đức Bảo",msnv:"",boPhan:"IT",chucVu:"Đội viên",sdt:""},
-        {hoTen:"Khổng Thị Ái",msnv:"",boPhan:"Kho sơn",chucVu:"Đội viên",sdt:""},
-        {hoTen:"Huỳnh Phương Thúy",msnv:"",boPhan:"Kho ngũ kim",chucVu:"Đội viên",sdt:""},
-        {hoTen:"Lê Thị Ngọc Trân",msnv:"",boPhan:"Sơn",chucVu:"Đội viên",sdt:""},
-        {hoTen:"Nguyễn Văn Trọng",msnv:"",boPhan:"Thành phẩm",chucVu:"Đội viên",sdt:""},
-        {hoTen:"Lê Văn Chốt",msnv:"",boPhan:"Bảo trì",chucVu:"Đội viên",sdt:""},
-        {hoTen:"Nguyễn Trần Trung Hiếu",msnv:"",boPhan:"Bảo trì",chucVu:"Đội viên",sdt:""},
+        {hoTen:"Trần Đức Bảo",msnv:"000154",boPhan:"Kho sơn",chucVu:"Đội viên",sdt:""},
+        {hoTen:"Khổng Thị Ái",msnv:"001810",boPhan:"Kho ngũ kim",chucVu:"Đội viên",sdt:""},
+        {hoTen:"Huỳnh Phương Thúy",msnv:"003216",boPhan:"Sơn Balet",chucVu:"Đội viên",sdt:""},
+        {hoTen:"Nguyễn Thị Minh Ngọc",msnv:"003621",boPhan:"Thành phẩm",chucVu:"Đội viên",sdt:""},
+        {hoTen:"Nguyễn Văn Trọng",msnv:"002605",boPhan:"Bảo trì",chucVu:"Đội viên",sdt:""},
+        {hoTen:"Lê Văn Chốt",msnv:"003219",boPhan:"Bảo trì",chucVu:"Đội viên",sdt:""},
+        {hoTen:"Huỳnh Văn Động",msnv:"003605",boPhan:"Sơn Balet",chucVu:"Đội viên",sdt:""},
+        {hoTen:"Danh Su",msnv:"003680",boPhan:"Sơn Balet",chucVu:"Đội viên",sdt:""},
+        {hoTen:"Đoàn Trung Toàn",msnv:"003281",boPhan:"Sơn Balet",chucVu:"Đội viên",sdt:""},
+        {hoTen:"Võ Hoàng Nam",msnv:"003461",boPhan:"Sơn Balet",chucVu:"Đội viên",sdt:""},
+        {hoTen:"Nguyễn Văn Liêm",msnv:"003586",boPhan:"Sơn Balet",chucVu:"Đội viên",sdt:""},
+        {hoTen:"Nguyễn Văn Quý",msnv:"000654",boPhan:"Sơn treo",chucVu:"Đội viên",sdt:""},
+        {hoTen:"Hồ Thiên Lâm",msnv:"003195",boPhan:"Sơn treo",chucVu:"Đội viên",sdt:""},
+        {hoTen:"Hoàng Xuân Nghĩa",msnv:"003634",boPhan:"Sơn UV",chucVu:"Đội viên",sdt:""},
+        {hoTen:"Lê Nhân Huy",msnv:"003168",boPhan:"Thành phẩm",chucVu:"Đội viên",sdt:""},
+        {hoTen:"Đinh Xuân Phúc",msnv:"003144",boPhan:"Thành phẩm",chucVu:"Đội viên",sdt:""},
+        {hoTen:"Phạm Phước Phát",msnv:"003622",boPhan:"Thành phẩm",chucVu:"Đội viên",sdt:""},
+        {hoTen:"Đỗ Duy Tiếp",msnv:"001379",boPhan:"Thành phẩm",chucVu:"Đội viên",sdt:""},
       ]},
     ]
   },
 };
-const TYPE_ORDER=["sucos","kiemtra","baocao","huanluyen","dientap","hop","kehoach","hoatdong","phancong","doivien"];
+const TYPE_ORDER=["sucos","kiemtra","baocao","huanluyen","dientap","hop","kehoach","hoatdong","phancong","ungpho","doivien"];
 
 /* =========================================================
    STATE & STORAGE
@@ -943,7 +1012,7 @@ function guideHTML(){
             <p>Trang này giúp <b>mọi thành viên</b> nắm rõ: cần làm gì, khi nào, dùng biểu mẫu nào và lưu bằng chứng ra sao. Bấm nút <b>＋ Tạo</b> ở mỗi mục để mở ngay biểu mẫu tương ứng và thực hiện báo cáo.</p>
 
             <div class="sect">A. Quy trình tổng thể (7 bước)</div>
-            ${step(1,"Kiện toàn lực lượng","Lập/cập nhật danh sách đội viên PCCC &amp; mạng lưới ATVSV và phân công nhiệm vụ chi tiết.",gBtn("doivien","Danh sách đội viên")+" "+gBtn("phancong","Bảng phân công"))}
+            ${step(1,"Kiện toàn lực lượng","Lập/cập nhật danh sách đội viên PCCC &amp; mạng lưới ATVSV, phân công nhiệm vụ chi tiết và phân công ứng phó khi xảy ra cháy nổ theo Quy trình NS.QT.04.",gBtn("doivien","Danh sách đội viên")+" "+gBtn("phancong","Bảng phân công")+" "+gBtn("ungpho","Phân công ứng phó cháy nổ"))}
             ${step(2,"Lập kế hoạch năm","Xây dựng kế hoạch triển khai và bảng theo dõi hoạt động PCCC theo tháng.",gBtn("kehoach","Kế hoạch triển khai")+" "+gBtn("hoatdong","Hoạt động PCCC năm"))}
             ${step(3,"Quản lý &amp; kiểm tra thiết bị","Kiểm tra định kỳ, bảo dưỡng, nạp sạc thiết bị PCCC; ghi phiếu kiểm tra mỗi kỳ.",gBtn("kiemtra","Phiếu kiểm tra thiết bị"))}
             ${step(4,"Huấn luyện &amp; diễn tập","Tổ chức huấn luyện nội bộ (3 tháng/lần) và diễn tập (2 lần/năm); lập biên bản kèm ảnh &amp; danh sách ký nhận.",gBtn("huanluyen","Biên bản huấn luyện")+" "+gBtn("dientap","Biên bản diễn tập"))}
@@ -965,6 +1034,7 @@ function guideHTML(){
                     ${trow("Kế hoạch triển khai","Đội trưởng","Hàng năm","Kế hoạch được duyệt","kehoach")}
                     ${trow("Hoạt động PCCC năm","Đội PCCC","Năm (theo dõi tháng)","Bảng theo dõi","hoatdong")}
                     ${trow("Bảng phân công công việc","Đội trưởng","Đầu năm / khi phát sinh","Bảng phân công","phancong")}
+                    ${trow("DS phân công ứng phó cháy nổ (NS.QT.04)","Đội trưởng","Khi phát sinh / thay đổi nhân sự","DS có ký duyệt","ungpho")}
                     ${trow("Danh sách đội viên PCCC","Đội trưởng / HCNS","Khi phát sinh","DS có ký duyệt","doivien")}
                 </tbody>
             </table>
