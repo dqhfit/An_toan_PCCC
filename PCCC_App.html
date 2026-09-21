@@ -755,6 +755,9 @@ let DASH_YEAR = nowYear();
 let MEMBERS = (typeof window!=="undefined" && window.PCCC_MEMBERS && Array.isArray(window.PCCC_MEMBERS.members)) ? window.PCCC_MEMBERS.members : null;
 let COMPANIES = (typeof window!=="undefined" && window.PCCC_MEMBERS && Array.isArray(window.PCCC_MEMBERS.companies) && window.PCCC_MEMBERS.companies.length) ? window.PCCC_MEMBERS.companies.slice() : ["VFM","DQH"];
 function companyOptions(cur){const o=COMPANIES.slice();if(cur&&o.indexOf(cur)<0)o.unshift(cur);return o;}
+/* ---- Tiêu đề chữ ký tuỳ chỉnh theo từng loại văn bản (cấu hình ở trang Admin) ---- */
+let SIGN_ROLES = {};
+function getSigns(typeKey){const ov=SIGN_ROLES[typeKey];return (Array.isArray(ov)&&ov.length)?ov:TYPES[typeKey].signs;}
 let CURRENT_USER = null;
 function roleLabel(r){return r==="member"?"Thành viên":"Đội trưởng / Quản lý";}
 function tryRestoreUser(){
@@ -1569,7 +1572,7 @@ function pHeaderTop(r){
     </tr></table>`;
 }
 function pSigns(r){
-    const s=TYPES[r.type].signs;const w=(100/s.length).toFixed(2);
+    const s=getSigns(r.type);const w=(100/s.length).toFixed(2);
     return `<table class="psign"><tr>${s.map(([role,hint])=>`<td style="width:${w}%"><div class="role">${esc(role)}</div><div class="hint">${esc(hint)}</div><div class="sp"></div></td>`).join("")}</tr></table>`;
 }
 function pField(label,val){if(!val)return "";return `<p><strong>${esc(label)}:</strong> ${nl2br(val)}</p>`;}
@@ -1665,6 +1668,7 @@ async function loadServerConfig(){
                 window.PCCC_MEMBERS={company:c.company||((window.PCCC_MEMBERS||{}).company||""),members:c.members};
             }
             if(c && Array.isArray(c.companies) && c.companies.length) COMPANIES=c.companies.slice();
+            if(c && c.signRoles && typeof c.signRoles==="object" && !Array.isArray(c.signRoles)) SIGN_ROLES=c.signRoles;
         }
     }catch(e){ /* không có server config — dùng pccc_members.js */ }
 }

@@ -39,6 +39,7 @@ function loadConfig() {
   if (!Array.isArray(config.members)) config.members = [];
   if (!Array.isArray(config.companies) || !config.companies.length) config.companies = ["VFM", "DQH"];
   if (typeof config.company !== "string") config.company = "";
+  if (!config.signRoles || typeof config.signRoles !== "object" || Array.isArray(config.signRoles)) config.signRoles = {};
 }
 function saveConfig() { try { fs.writeFileSync(CONFIG_FILE, JSON.stringify(config, null, 2)); } catch (e) { console.error("Lưu config lỗi:", e.message); } }
 loadConfig();
@@ -162,7 +163,7 @@ const server = http.createServer((req, res) => {
 
   // ---- API cấu hình (công khai: chỉ trả members để app hiển thị màn hình chọn tên) ----
   if (u.pathname === "/api/config" && req.method === "GET") {
-    return send(res, 200, JSON.stringify({ company: config.company || "", companies: config.companies || [], members: config.members || [] }), { "Content-Type": "application/json" });
+    return send(res, 200, JSON.stringify({ company: config.company || "", companies: config.companies || [], members: config.members || [], signRoles: config.signRoles || {} }), { "Content-Type": "application/json" });
   }
 
   // ---- API quản trị (cần token) ----
@@ -191,6 +192,16 @@ const server = http.createServer((req, res) => {
           unit: String(m.unit || "").trim(), department: String(m.department || "").trim(),
           position: String(m.position || "").trim(), role: m.role === "manager" ? "manager" : "member"
         })).filter(m => m.name);
+        if (p.signRoles && typeof p.signRoles === "object" && !Array.isArray(p.signRoles)) {
+          const sr = {};
+          for (const key of Object.keys(p.signRoles)) {
+            const arr = p.signRoles[key];
+            if (!Array.isArray(arr)) continue;
+            const rows = arr.map(pair => [String((pair && pair[0]) || "").trim(), String((pair && pair[1]) || "").trim()]).filter(r => r[0]);
+            if (rows.length) sr[key] = rows;
+          }
+          config.signRoles = sr;
+        }
         saveConfig();
         return send(res, 200, JSON.stringify({ ok: true, count: config.members.length }), { "Content-Type": "application/json" });
       });

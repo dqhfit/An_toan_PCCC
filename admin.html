@@ -36,6 +36,9 @@
     .muted{color:var(--muted);font-size:12.5px;}
     .danger-zone{border-color:var(--accent);}
     .danger-zone h2{color:var(--accent);}
+    .signtype{border:1px solid var(--line);border-radius:8px;padding:12px 14px;margin-bottom:12px;background:var(--soft);}
+    .signtype-h{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px;}
+    .signtype-h b{color:var(--ink);font-size:13.5px;}
     /* login */
     .login{position:fixed;inset:0;background:rgba(15,25,45,.8);display:flex;align-items:center;justify-content:center;padding:20px;z-index:50;}
     .login.hidden{display:none;}
@@ -99,6 +102,16 @@
             </div>
             <div class="row" style="margin-top:12px">
                 <button class="btn ghost sm" onclick="addMember()">＋ Thêm thành viên</button>
+                <div class="spacer" style="flex:1"></div>
+                <button class="btn ok" onclick="saveConfig()">💾 Lưu cấu hình</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Tiêu đề chữ ký theo từng loại văn bản</h2>
+            <p class="muted" style="margin-top:-6px">Đổi tên vai trò (in đậm) và ghi chú (in nghiêng) ở khối ký tên cuối mỗi văn bản khi in — áp dụng cho mọi hồ sơ cùng loại.</p>
+            <div id="signRolesWrap"></div>
+            <div class="row" style="margin-top:4px">
                 <div class="spacer" style="flex:1"></div>
                 <button class="btn ok" onclick="saveConfig()">💾 Lưu cấu hình</button>
             </div>
@@ -175,12 +188,79 @@ async function enterAdmin(){
 
 let MEMBERS=[];
 function getCompanies(){return (document.getElementById("companies").value||"").split(",").map(s=>s.trim()).filter(Boolean);}
+
+// Danh mục loại văn bản & nhãn chữ ký mặc định (khớp với TYPES trong PCCC_App.html — sửa cả 2 nơi nếu thêm loại văn bản mới)
+const DOC_TYPES=[
+  {key:"huanluyen",label:"📋 Biên bản huấn luyện",def:[["Người chủ trì / Hướng dẫn","(Ký, ghi rõ họ tên)"]]},
+  {key:"dientap",label:"🧯 Biên bản diễn tập",def:[["Thư ký","(Ký, ghi rõ họ tên)"],["Đơn vị phối hợp / Giám sát","(Ký, ghi rõ họ tên)"],["Chỉ huy diễn tập","(Ký, ghi rõ họ tên)"]]},
+  {key:"hop",label:"👥 Biên bản họp ATVSV",def:[["Thư ký","(Ký, ghi rõ họ tên)"],["Chủ trì cuộc họp","(Ký, ghi rõ họ tên)"]]},
+  {key:"kehoach",label:"📝 Kế hoạch triển khai",def:[["Người lập kế hoạch","(Ký, ghi rõ họ tên)"],["Phê duyệt - Lãnh đạo đơn vị","(Ký, đóng dấu)"]]},
+  {key:"hoatdong",label:"📅 Hoạt động PCCC năm",def:[["Người lập","(Ký, ghi rõ họ tên)"],["Xác nhận","(Ký, ghi rõ họ tên)"],["Phê duyệt","(Ký, đóng dấu)"]]},
+  {key:"sucos",label:"⚠️ Phiếu báo cáo sự cố / nguy cơ",def:[["Người báo cáo","(Ký, ghi rõ họ tên)"],["Đội trưởng PCCC tiếp nhận","(Ký, ghi rõ họ tên)"]]},
+  {key:"kiemtra",label:"🔧 Phiếu kiểm tra thiết bị PCCC",def:[["Người kiểm tra","(Ký, ghi rõ họ tên)"],["Đội trưởng PCCC xác nhận","(Ký, ghi rõ họ tên)"]]},
+  {key:"baocao",label:"📊 Báo cáo công tác PCCC",def:[["Người lập","(Ký, ghi rõ họ tên)"],["Phê duyệt","(Ký, đóng dấu)"]]},
+  {key:"phancong",label:"🗂️ Bảng phân công công việc",def:[["Người soạn","(Ký, ghi rõ họ tên)"],["Xác nhận","(Ký, ghi rõ họ tên)"],["Phê duyệt","(Ký, đóng dấu)"]]},
+  {key:"ungpho",label:"🚨 Phân công ứng phó cháy nổ",def:[["Soạn thảo","(Ký, ghi rõ họ tên)"],["Phê duyệt","(Ký, đóng dấu)"]]},
+  {key:"doivien",label:"🧑‍🚒 Danh sách đội viên PCCC",def:[["Người lập","(Ký, ghi rõ họ tên)"],["Phê duyệt","(Ký, đóng dấu)"]]},
+];
+let SIGN_ROLES={};
+function getTypeSigns(key){
+    const t=DOC_TYPES.find(d=>d.key===key);
+    const cur=SIGN_ROLES[key];
+    return (Array.isArray(cur)&&cur.length)?cur:(t?t.def.map(p=>p.slice()):[]);
+}
+function renderSignRoles(){
+    const el=document.getElementById("signRolesWrap");
+    el.innerHTML=DOC_TYPES.map(t=>{
+        const rows=getTypeSigns(t.key);
+        const body=rows.map((r,i)=>`<tr>
+            <td><input value="${esc(r[0])}" oninput="setSignRole('${t.key}',${i},0,this.value)" placeholder="vd: Người chủ trì / Hướng dẫn"></td>
+            <td><input value="${esc(r[1])}" oninput="setSignRole('${t.key}',${i},1,this.value)" placeholder="vd: (Ký, ghi rõ họ tên)"></td>
+            <td style="text-align:center"><button class="rowdel" onclick="delSignRow('${t.key}',${i})">✕</button></td>
+        </tr>`).join("") || `<tr><td colspan="3" style="text-align:center;color:var(--muted);padding:10px">Chưa có ô ký nào.</td></tr>`;
+        return `<div class="signtype">
+            <div class="signtype-h">
+                <b>${t.label}</b>
+                <button class="btn ghost sm" onclick="resetSignType('${t.key}')">↺ Mặc định</button>
+            </div>
+            <div class="tablewrap">
+                <table>
+                    <thead><tr><th>Tiêu đề (in đậm)</th><th>Ghi chú (in nghiêng)</th><th></th></tr></thead>
+                    <tbody>${body}</tbody>
+                </table>
+            </div>
+            <button class="btn ghost sm" style="margin-top:8px" onclick="addSignRow('${t.key}')">＋ Thêm ô ký</button>
+        </div>`;
+    }).join("");
+}
+function setSignRole(key,i,idx,val){
+    if(!Array.isArray(SIGN_ROLES[key]))SIGN_ROLES[key]=getTypeSigns(key);
+    SIGN_ROLES[key][i][idx]=val;
+}
+function addSignRow(key){
+    if(!Array.isArray(SIGN_ROLES[key]))SIGN_ROLES[key]=getTypeSigns(key);
+    SIGN_ROLES[key].push(["","(Ký, ghi rõ họ tên)"]);
+    renderSignRoles();
+}
+function delSignRow(key,i){
+    if(!Array.isArray(SIGN_ROLES[key]))SIGN_ROLES[key]=getTypeSigns(key);
+    SIGN_ROLES[key].splice(i,1);
+    renderSignRoles();
+}
+function resetSignType(key){
+    const t=DOC_TYPES.find(d=>d.key===key);
+    SIGN_ROLES[key]=t?t.def.map(p=>p.slice()):[];
+    renderSignRoles();
+}
+
 async function loadConfig(){
     const c=await api("/admin/config");
     document.getElementById("company").value=c.company||"";
     document.getElementById("companies").value=(Array.isArray(c.companies)?c.companies:["VFM","DQH"]).join(", ");
     MEMBERS=Array.isArray(c.members)?c.members:[];
     renderMembers();
+    SIGN_ROLES=(c.signRoles&&typeof c.signRoles==="object"&&!Array.isArray(c.signRoles))?JSON.parse(JSON.stringify(c.signRoles)):{};
+    renderSignRoles();
     ENV_TOKEN=!!c.envToken;
     document.getElementById("tokenNote").textContent = ENV_TOKEN
         ? "Token đang đặt bằng biến môi trường ADMIN_TOKEN — đổi tại Coolify, không đổi ở đây."
@@ -215,8 +295,13 @@ async function saveConfig(){
     const company=document.getElementById("company").value.trim();
     const companies=getCompanies();
     const members=MEMBERS.filter(m=>String(m.name||"").trim());
+    const signRoles={};
+    DOC_TYPES.forEach(t=>{
+        const rows=getTypeSigns(t.key).map(r=>[String(r[0]||"").trim(),String(r[1]||"").trim()]).filter(r=>r[0]);
+        if(rows.length)signRoles[t.key]=rows;
+    });
     try{
-        const r=await api("/admin/config","POST",{company,companies,members});
+        const r=await api("/admin/config","POST",{company,companies,members,signRoles});
         toast("Đã lưu cấu hình ("+r.count+" thành viên)");
     }catch(e){ toast("Lỗi: "+e.message); }
 }
