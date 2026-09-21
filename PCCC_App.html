@@ -31,7 +31,7 @@
     .topbar .spacer{flex:1;}
     .menubtn{display:none;border:1px solid rgba(255,255,255,.5);background:rgba(255,255,255,.14);color:#fff;border-radius:6px;font-size:18px;line-height:1;padding:5px 11px;cursor:pointer;}
     .topbar .btn{border-color:rgba(255,255,255,.5);}
-    .layout{display:flex;min-height:calc(100vh - 62px);}
+    .layout{display:flex;height:calc(100vh - 62px);}
     .sidebar{width:300px;flex:0 0 300px;background:var(--surface);border-right:1px solid var(--line);padding:16px;overflow-y:auto;}
     .main{flex:1;padding:24px 28px;overflow-y:auto;}
 
@@ -52,7 +52,10 @@
     .rec.active{border-color:var(--primary);background:var(--soft);}
     .rec .t{font-weight:bold;font-size:13px;color:var(--primary);}
     .rec .m{font-size:11.5px;color:var(--muted);margin-top:3px;display:flex;justify-content:space-between;gap:6px;}
+    .rec .m .tags{display:flex;gap:4px;flex-wrap:wrap;}
     .tag{display:inline-block;font-size:10.5px;padding:1px 7px;border-radius:9px;background:#e7eef7;color:var(--primary2);font-weight:bold;}
+    .tag.unit{background:#fdeee9;color:var(--accent);}
+    .chip.unit.active{background:var(--accent);border-color:var(--accent);}
     .empty{color:var(--muted);font-size:13px;text-align:center;padding:30px 10px;font-style:italic;}
 
     /* ===== Editor ===== */
@@ -254,7 +257,7 @@
         .topbar .sub{display:none;}
         .topbar .btn.sm,.rolesel,.userchip{padding:6px 8px;font-size:11.5px;}
         .menubtn{display:inline-flex;align-items:center;}
-        .layout{flex-direction:column;}
+        .layout{flex-direction:column;height:auto;}
         .sidebar{width:100%;flex:none;border-right:none;border-bottom:1px solid var(--line);display:none;max-height:62vh;overflow-y:auto;}
         body.sb-open .sidebar{display:block;}
         .main{padding:16px 14px;}
@@ -303,6 +306,7 @@
         </div>
         <input class="search" id="search" placeholder="🔎 Tìm theo tiêu đề..." oninput="renderList()">
         <div class="filters" id="filters"></div>
+        <div class="filters" id="unitFilters"></div>
         <div id="list"></div>
     </aside>
     <main class="main" id="main"></main>
@@ -729,7 +733,7 @@ const TYPE_ORDER=["sucos","kiemtra","baocao","huanluyen","dientap","hop","kehoac
 /* =========================================================
    STATE & STORAGE
 ========================================================= */
-let STATE={records:[],view:"welcome",current:null,filter:"all",editingId:null,dirty:false};
+let STATE={records:[],view:"welcome",current:null,filter:"all",filterUnit:"all",editingId:null,dirty:false};
 function getRec(id){if(STATE.current&&STATE.current.id===id)return STATE.current;return STATE.records.find(r=>r.id===id);}
 /* ---- role-based view mode (lưu sở thích giao diện, không phải bảo mật) ---- */
 let ROLE = localStorage.getItem("pccc_role") || "manager";
@@ -889,28 +893,46 @@ function renderFilters(){
     document.getElementById("filters").innerHTML=h;
 }
 function setFilter(f){STATE.filter=f;renderFilters();renderList();}
+function recUnits(){
+    const units=COMPANIES.slice();
+    STATE.records.forEach(r=>{const u=r.data&&r.data.donVi;if(u&&units.indexOf(u)<0)units.push(u);});
+    return units;
+}
+function renderUnitFilters(){
+    const units=recUnits();
+    const el=document.getElementById("unitFilters");
+    if(units.length<2){el.innerHTML="";return;}
+    const counts={all:STATE.records.length};
+    units.forEach(u=>counts[u]=STATE.records.filter(r=>(r.data&&r.data.donVi)===u).length);
+    let h=`<span class="chip unit ${STATE.filterUnit==='all'?'active':''}" onclick="setUnitFilter('all')">🏢 Tất cả đơn vị (${counts.all})</span>`;
+    units.forEach(u=>{h+=`<span class="chip unit ${STATE.filterUnit===u?'active':''}" onclick="setUnitFilter('${esc(u)}')">${esc(u)} (${counts[u]||0})</span>`;});
+    el.innerHTML=h;
+}
+function setUnitFilter(u){STATE.filterUnit=u;renderUnitFilters();renderList();}
 function renderList(){
     const q=(document.getElementById("search").value||"").toLowerCase();
     let recs=STATE.records.slice().sort((a,b)=>b.updatedAt.localeCompare(a.updatedAt));
     if(STATE.filter!=="all")recs=recs.filter(r=>r.type===STATE.filter);
+    if(STATE.filterUnit!=="all")recs=recs.filter(r=>(r.data&&r.data.donVi)===STATE.filterUnit);
     if(q)recs=recs.filter(r=>recTitle(r).toLowerCase().includes(q));
     const el=document.getElementById("list");
     if(!recs.length){el.innerHTML='<div class="empty">Chưa có hồ sơ. Bấm “＋ Tạo hồ sơ mới”.</div>';return;}
     el.innerHTML=recs.map(r=>{
         const t=TYPES[r.type];const active=STATE.current&&STATE.current.id===r.id;
+        const donVi=(r.data&&r.data.donVi)||"";
         return `<div class="rec ${active?'active':''}" onclick="openRecord('${r.id}')">
             <div class="t">${esc(recTitle(r))}</div>
-            <div class="m"><span class="tag">${t.icon} ${esc(t.label)}</span><span>${fmtDateTime(r.updatedAt)}</span></div>
+            <div class="m"><span class="tags"><span class="tag">${t.icon} ${esc(t.label)}</span>${donVi?`<span class="tag unit">${esc(donVi)}</span>`:""}</span><span>${fmtDateTime(r.updatedAt)}</span></div>
         </div>`;
     }).join("");
 }
-function renderListSilently(){renderFilters();renderList();}
+function renderListSilently(){renderFilters();renderUnitFilters();renderList();}
 function fmtDateTime(iso){const d=new Date(iso);return String(d.getDate()).padStart(2,"0")+"/"+String(d.getMonth()+1).padStart(2,"0")+" "+String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0");}
 
 /* =========================================================
    RENDER — main (welcome / editor)
 ========================================================= */
-function renderAll(){renderFilters();renderList();renderMain();}
+function renderAll(){renderFilters();renderUnitFilters();renderList();renderMain();}
 function updateDocTitle(){
     const donVi=(STATE.view==="edit"&&STATE.current)?STATE.current.data.donVi:"";
     document.title="Ứng dụng Quản lý Hồ sơ An toàn - PCCC | "+(donVi||"VFM & DQH");
