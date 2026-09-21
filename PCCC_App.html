@@ -379,7 +379,7 @@ const TYPES = {
     label:"Biên bản huấn luyện", icon:"📋", code:"BB-PCCC",
     printTitle:"BIÊN BẢN HUẤN LUYỆN NGHIỆP VỤ PCCC",
     subtitle:"(Huấn luyện nội bộ về nghiệp vụ PCCC & cách sử dụng thiết bị)",
-    signs:[["Người chủ trì / Hướng dẫn","(Ký, ghi rõ họ tên)"]],
+    signs:[["Người chủ trì / Hướng dẫn","(Ký, ghi rõ họ tên)"],["Phê duyệt","(Ký, đóng dấu)"]],
     title:d=>"Biên bản huấn luyện — "+fmtDate(d.ngay),
     fields:[
       {s:"Thông tin chung"},
@@ -397,8 +397,7 @@ const TYPES = {
       {n:"thanhVien",l:"",t:"list",member:{hoTen:"name",mnv:"msnv",boPhan:"department"},cols:[
         {n:"hoTen",l:"Họ và tên"},{n:"mnv",l:"MNV",w:"90px"},{n:"boPhan",l:"Bộ phận"},
         {n:"boiDuong",l:"Bồi dưỡng (đồng)",w:"120px",def:"100.000"},
-        {n:"kyNhan",l:"Ký nhận",w:"110px"},
-        {n:"pheDuyet",l:"Phê duyệt",w:"110px"}
+        {n:"kyNhan",l:"Ký nhận",w:"110px"}
       ]},
       {s:"Hình ảnh bằng chứng"},
       {n:"hinhAnh",l:"",t:"images"},
