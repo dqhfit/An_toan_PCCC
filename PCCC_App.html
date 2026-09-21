@@ -379,7 +379,7 @@ const TYPES = {
     label:"Biên bản huấn luyện", icon:"📋", code:"BB-PCCC",
     printTitle:"BIÊN BẢN HUẤN LUYỆN NGHIỆP VỤ PCCC",
     subtitle:"(Huấn luyện nội bộ về nghiệp vụ PCCC & cách sử dụng thiết bị)",
-    signs:[["Thư ký","(Ký, ghi rõ họ tên)"],["Người chủ trì / Hướng dẫn","(Ký, ghi rõ họ tên)"]],
+    signs:[["Người chủ trì / Hướng dẫn","(Ký, ghi rõ họ tên)"]],
     title:d=>"Biên bản huấn luyện — "+fmtDate(d.ngay),
     fields:[
       {s:"Thông tin chung"},
@@ -390,14 +390,15 @@ const TYPES = {
       {n:"gioBatDau",l:"Giờ bắt đầu",t:"time"},
       {n:"gioKetThuc",l:"Giờ kết thúc",t:"time"},
       {n:"chuTri",l:"Người chủ trì / hướng dẫn",t:"text",person:true},
-      {n:"thuKy",l:"Thư ký",t:"text"},
       {s:"Nội dung & kết quả"},
       {n:"noiDung",l:"Nội dung huấn luyện",t:"textarea",full:true,def:"1. Phổ biến kiến thức pháp luật, nội quy an toàn PCCC.\n2. Hướng dẫn nhận biết nguy cơ cháy nổ tại khu vực làm việc.\n3. Hướng dẫn sử dụng phương tiện chữa cháy tại chỗ.\n4. Quy trình báo cháy, thoát nạn và xử lý sự cố ban đầu."},
       {n:"ketQua",l:"Kết quả & đánh giá",t:"textarea",full:true},
       {s:"Danh sách tham dự & ký nhận bồi dưỡng (100.000đ/người/lần)"},
       {n:"thanhVien",l:"",t:"list",member:{hoTen:"name",mnv:"msnv",boPhan:"department"},cols:[
         {n:"hoTen",l:"Họ và tên"},{n:"mnv",l:"MNV",w:"90px"},{n:"boPhan",l:"Bộ phận"},
-        {n:"boiDuong",l:"Bồi dưỡng (đồng)",w:"120px",def:"100.000"}
+        {n:"boiDuong",l:"Bồi dưỡng (đồng)",w:"120px",def:"100.000"},
+        {n:"kyNhan",l:"Ký nhận",w:"110px"},
+        {n:"pheDuyet",l:"Phê duyệt",w:"110px"}
       ]},
       {s:"Hình ảnh bằng chứng"},
       {n:"hinhAnh",l:"",t:"images"},
@@ -908,8 +909,13 @@ function fmtDateTime(iso){const d=new Date(iso);return String(d.getDate()).padSt
    RENDER — main (welcome / editor)
 ========================================================= */
 function renderAll(){renderFilters();renderList();renderMain();}
+function updateDocTitle(){
+    const donVi=(STATE.view==="edit"&&STATE.current)?STATE.current.data.donVi:"";
+    document.title="Ứng dụng Quản lý Hồ sơ An toàn - PCCC | "+(donVi||"VFM & DQH");
+}
 function renderMain(){
     const m=document.getElementById("main");
+    updateDocTitle();
     if(STATE.view==="dashboard"){m.innerHTML=dashboardHTML();return;}
     if(STATE.view==="guide"){m.innerHTML=guideHTML();return;}
     if(STATE.view==="welcome"||!STATE.current){m.innerHTML=welcomeHTML();return;}
@@ -1093,7 +1099,7 @@ function fieldEditor(rec,f){
     return `<div class="fld ${f.full?'full':''}"><label>${esc(f.l)}</label>${input}</div>`;
 }
 function setField(name,val){if(!STATE.current)return;STATE.current.data[name]=val;touch();maybeRetitle();}
-function maybeRetitle(){const h=document.querySelector(".editor-head h2");if(h&&STATE.current)h.textContent=recTitle(STATE.current);}
+function maybeRetitle(){const h=document.querySelector(".editor-head h2");if(h&&STATE.current)h.textContent=recTitle(STATE.current);updateDocTitle();}
 
 /* ---------- list editor ---------- */
 function listEditor(rec,f){
