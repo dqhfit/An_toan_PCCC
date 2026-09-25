@@ -221,12 +221,26 @@ const server = http.createServer((req, res) => {
     if (!sess) return send(res, 401, JSON.stringify({ error: "Cần đăng nhập — phiên hết hạn hoặc thiếu token" }), { "Content-Type": "application/json" });
     // Quyền ghi: manager sửa được mọi hồ sơ; thành viên chỉ sửa hồ sơ mình tạo (owner trùng khoá của mình)
     const canWrite = (rec) => sess.role === "manager" || String(rec.owner || "") === sess.key;
-    // Tách công ty: user chỉ thấy/ghi tài liệu đúng công ty của mình (unit); hồ sơ không điền đơn vị
-    // và hồ sơ do chính mình tạo vẫn thấy. Chỉ trang quản trị (admin token) thấy toàn bộ.
+    // Tách công ty: manager XEM được hồ sơ mọi công ty; thành viên chỉ thấy công ty mình
+    // (hồ sơ thiếu đơn vị và hồ sơ tự tạo vẫn thấy). GHI thì ai cũng chỉ đụng được công ty mình
+    // (kể cả manager — hồ sơ công ty khác chỉ xem). Trang quản trị (admin token) thấy toàn bộ.
     const myUnit = String(sess.member.unit || "").trim();
-    const unitOK = (rec) => {
+    const canSee = (rec) => {
+      if (sess.role === "manager") return true;
       if (!myUnit) return true;
       if (rec && rec.owner === sess.key) return true;
+      const dv = rec && rec.data ? String(rec.data.donVi || "").trim() : "";
+      return !dv || dv === myUnit;
+    };
+    // Quyền ghi theo công ty: hồ sơ CÓ TRÊN server thì xét theo BẢN GỐC trên server (đúng công ty
+    // hoặc thuộc sở hữu mình — không tin donVi client gửi); hồ sơ mới phải đúng công ty (hoặc trống đơn vị)
+    const writeUnitOK = (cur, rec) => {
+      if (!myUnit) return true;
+      if (cur) {
+        if (cur.owner === sess.key) return true;
+        const dv = cur.data ? String(cur.data.donVi || "").trim() : "";
+        return !dv || dv === myUnit;
+      }
       const dv = rec && rec.data ? String(rec.data.donVi || "").trim() : "";
       return !dv || dv === myUnit;
     };
@@ -248,13 +262,13 @@ const server = http.createServer((req, res) => {
         const cur = db.records[rec.id];
         if (rec.deleted) {
           // Tombstone (yêu cầu xoá): chỉ áp dụng nếu record chưa có trên server HOẶC mình có quyền ghi nó (cùng công ty)
-          if ((!cur || canWrite(cur)) && unitOK(cur || rec)) db.records[rec.id] = rec;
+          if ((!cur || canWrite(cur)) && writeUnitOK(cur, rec)) db.records[rec.id] = rec;
           else rejected.push(rec.id);
           continue;
         }
         // Record thường: member chỉ được tạo/sửa đúng loại hồ sơ của thành viên
         if (sess.role !== "manager" && !MEMBER_TYPES.includes(rec.type)) { rejected.push(rec.id); continue; }
-        if (!unitOK(rec)) { rejected.push(rec.id); continue; } // tài liệu công ty khác → từ chối
+        if (!writeUnitOK(cur, rec)) { rejected.push(rec.id); continue; } // tài liệu công ty khác → chỉ xem, không ghi
         if (cur && !canWrite(cur)) { rejected.push(rec.id); continue; } // hồ sơ của người khác → bỏ qua
         if (cur) {
           rec.owner = cur.owner; rec.ownerName = cur.ownerName; // giữ nguyên chủ sở hữu gốc (manager sửa cũng không đổi chủ)
@@ -263,11 +277,11 @@ const server = http.createServer((req, res) => {
         }
         if (!cur || String(rec.updatedAt || "") >= String(cur.updatedAt || "")) db.records[rec.id] = rec;
       }
-      // trả về các bản ghi đổi từ lần đồng bộ trước — CHỈ những bản thuộc công ty của người gọi
+      // trả về các bản ghi đổi từ lần đồng bộ trước — manager thấy mọi công ty, member thấy công ty mình
       const changed = [];
       for (const id in db.records) {
         const r = db.records[id];
-        if (!unitOK(r)) continue;
+        if (!canSee(r)) continue;
         if (!since || String(r.updatedAt || "") > String(since)) changed.push(r);
       }
       if (incoming.length) saveDB();

@@ -781,13 +781,24 @@ function roleLabel(r){return r==="member"?"Thành viên":"Đội trưởng / Qu�
 /* Khoá thành viên thống nhất với server: MSNV nếu có, không thì tên (trim) */
 function memberKeyOf(m){const msnv=String((m&&m.msnv)||"").trim();if(msnv)return msnv;return String((m&&m.name)||"").trim();}
 function myKey(){return CURRENT_USER?memberKeyOf(CURRENT_USER):"";}
-/* Quyền sửa/xoá hồ sơ: manager sửa được mọi hồ sơ; thành viên chỉ sửa hồ sơ mình tạo */
-function canEdit(rec){if(!rec)return false;if(ROLE==="manager")return true;return String(rec.owner||"")===myKey()&&!!myKey();}
-/* Tách công ty: user chỉ thấy tài liệu đúng công ty của mình (theo unit); hồ sơ không điền đơn vị
-   và hồ sơ do chính mình tạo vẫn thấy. Toàn bộ dữ liệu chỉ xem được ở trang quản trị (admin). */
+/* Quyền sửa/xoá hồ sơ: manager sửa được hồ sơ trong cùng công ty (hoặc hồ sơ không ghi đơn vị);
+   thành viên chỉ sửa hồ sơ mình tạo. Hồ sơ công ty khác (kể cả manager) → chỉ xem. */
+function canEdit(rec){
+    if(!rec)return false;
+    const u=myUnit();
+    if(u){
+        const dv=(rec.data&&rec.data.donVi)?String(rec.data.donVi).trim():"";
+        if(dv&&dv!==u&&String(rec.owner||"")!==myKey())return false; // công ty khác: chỉ xem
+    }
+    if(ROLE==="manager")return true;
+    return String(rec.owner||"")===myKey()&&!!myKey();
+}
+/* Tách công ty khi xem: manager thấy hồ sơ mọi công ty; thành viên chỉ thấy công ty mình
+   (hồ sơ không điền đơn vị và hồ sơ do chính mình tạo vẫn thấy). */
 function myUnit(){return CURRENT_USER?String(CURRENT_USER.unit||"").trim():"";}
 function unitAllows(rec){
     if(!CURRENT_USER)return false; // chưa đăng nhập → không hiện gì
+    if(ROLE==="manager")return true;
     const u=myUnit();if(!u)return true;
     if(String(rec.owner||"")===myKey())return true;
     const dv=(rec.data&&rec.data.donVi)?String(rec.data.donVi).trim():"";
