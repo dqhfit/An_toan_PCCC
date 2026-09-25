@@ -831,6 +831,7 @@ function showLogin(){
         <div id="loginErr" style="color:var(--accent);font-size:12.5px;min-height:16px;text-align:left"></div>
         <button class="btn block" onclick="chooseUser(document.getElementById('loginSel').value)">Đăng nhập →</button>
         ${hasCur?`<button class="btn ghost block" style="margin-top:8px" onclick="closeLogin()">Hủy</button>`:""}
+        ${SYNC.base?`<a href="admin.html" target="_blank" class="btn ghost block" style="margin-top:8px;text-decoration:none;display:block" title="Vào trang quản trị: đặt lại mật khẩu thành viên, chỉnh vai trò, sao lưu dữ liệu">⚙ Trang quản trị — đặt mật khẩu thành viên</a>`:""}
     </div>`;
     if(hasCur){const idx=MEMBERS.indexOf(CURRENT_USER);const s=document.getElementById("loginSel");if(s&&idx>=0)s.value=idx;}
     document.getElementById("login").classList.add("open");
