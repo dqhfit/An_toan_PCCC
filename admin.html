@@ -90,21 +90,23 @@
 
         <div class="card">
             <h2>Thành viên &amp; vai trò</h2>
-            <p class="muted">role: <b>manager</b> = Đội trưởng/Quản lý (toàn quyền) · <b>member</b> = Thành viên (chỉ tạo báo cáo).</p>
+            <p class="muted">role: <b>manager</b> = Đội trưởng/Quản lý (sửa được hồ sơ của mọi người <b>cùng công ty</b>) · <b>member</b> = Thành viên (chỉ tạo/sửa hồ sơ của mình). Mỗi người chỉ thấy tài liệu công ty của mình.</p>
             <div class="tablewrap">
                 <table id="memTable">
                     <thead><tr>
                         <th>Họ tên</th><th class="tn-hide">MSNV</th><th>Đơn vị</th>
-                        <th class="tn-hide">Bộ phận</th><th class="tn-hide">Chức vụ</th><th>Vai trò</th><th></th>
+                        <th class="tn-hide">Bộ phận</th><th class="tn-hide">Chức vụ</th><th>Vai trò</th><th>Mật khẩu</th><th></th><th></th>
                     </tr></thead>
                     <tbody id="memBody"></tbody>
                 </table>
             </div>
             <div class="row" style="margin-top:12px">
                 <button class="btn ghost sm" onclick="addMember()">＋ Thêm thành viên</button>
+                <button class="btn danger sm" onclick="initAllPasswords()">🔑 Khởi tạo mật khẩu mặc định cho tất cả</button>
                 <div class="spacer" style="flex:1"></div>
                 <button class="btn ok" onclick="saveConfig()">💾 Lưu cấu hình</button>
             </div>
+            <p class="muted" style="margin-top:8px">Mật khẩu mặc định = <b>MSNV</b> (người không có MSNV dùng <b>123456</b>). Ô “Mật khẩu” để trống = giữ nguyên mật khẩu cũ; nhập mật khẩu mới rồi bấm <b>Reset</b> của dòng đó.</p>
         </div>
 
         <div class="card">
@@ -284,17 +286,45 @@ function renderMembers(){
         <td class="tn-hide"><input value="${esc(m.department)}" oninput="setM(${i},'department',this.value)"></td>
         <td class="tn-hide"><input value="${esc(m.position)}" oninput="setM(${i},'position',this.value)"></td>
         <td><select onchange="setM(${i},'role',this.value)">${ROLES.map(([v,l])=>`<option value="${v}" ${v===m.role?"selected":""}>${l}</option>`).join("")}</select></td>
+        <td><input type="password" placeholder="Để trống = giữ nguyên" autocomplete="new-password" oninput="setM(${i},'newPass',this.value)"></td>
+        <td style="text-align:center"><button class="btn ghost sm" onclick="resetMemberPass(${i})" title="Đặt lại mật khẩu theo ô Mật khẩu">Reset</button></td>
         <td style="text-align:center"><button class="rowdel" onclick="delMember(${i})">✕</button></td>
-    </tr>`;}).join("") || `<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:14px">Chưa có thành viên. Bấm “＋ Thêm thành viên”.</td></tr>`;
+    </tr>`;}).join("") || `<tr><td colspan="9" style="text-align:center;color:var(--muted);padding:14px">Chưa có thành viên. Bấm “＋ Thêm thành viên”.</td></tr>`;
 }
 function setM(i,k,v){MEMBERS[i][k]=v;}
 function addMember(){MEMBERS.push({name:"",msnv:"",unit:(getCompanies()[0]||""),department:"",position:"",role:"member"});renderMembers();}
 function delMember(i){MEMBERS.splice(i,1);renderMembers();}
 
+// Đặt lại mật khẩu 1 thành viên (mật khẩu mới gõ ở ô Mật khẩu của dòng đó)
+async function resetMemberPass(i){
+    const m=MEMBERS[i];if(!m)return;
+    const pw=String(m.newPass||"");
+    if(!pw){ toast("Hãy gõ mật khẩu mới vào ô Mật khẩu trước"); return; }
+    if(pw.length<4){ toast("Mật khẩu tối thiểu 4 ký tự"); return; }
+    try{
+        const r=await api("/admin/password","POST",{msnv:String(m.msnv||"").trim(),name:String(m.name||"").trim(),password:pw});
+        m.newPass="";
+        renderMembers();
+        toast("Đã đặt lại mật khẩu cho "+r.member);
+    }catch(e){ toast("Lỗi: "+e.message); }
+}
+// Đưa mật khẩu MỌI thành viên về mặc định (MSNV, không có MSNV thì 123456)
+async function initAllPasswords(){
+    if(!confirm("Đặt lại mật khẩu của TẤT CẢ thành viên về mặc định?\n\n• Có MSNV → mật khẩu = MSNV\n• Không có MSNV → mật khẩu = 123456\n\nAi đã tự đổi mật khẩu sẽ phải dùng lại mật khẩu mặc định."))return;
+    try{
+        const r=await api("/admin/password-init","POST",{});
+        toast("Đã khởi tạo mật khẩu mặc định cho "+r.count+" thành viên");
+    }catch(e){ toast("Lỗi: "+e.message); }
+}
+
 async function saveConfig(){
     const company=document.getElementById("company").value.trim();
     const companies=getCompanies();
-    const members=MEMBERS.filter(m=>String(m.name||"").trim());
+    // KHÔNG gửi passHash/salt/newPass — server tự merge giữ hash cũ
+    const members=MEMBERS.filter(m=>String(m.name||"").trim()).map(m=>({
+        name:m.name, msnv:m.msnv, unit:m.unit, department:m.department, position:m.position,
+        role:m.role==="manager"?"manager":"member"
+    }));
     const signRoles={};
     DOC_TYPES.forEach(t=>{
         const rows=getTypeSigns(t.key).map(r=>[String(r[0]||"").trim(),String(r[1]||"").trim()]).filter(r=>r[0]);

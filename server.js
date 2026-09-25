@@ -44,6 +44,30 @@ function loadConfig() {
 function saveConfig() { try { fs.writeFileSync(CONFIG_FILE, JSON.stringify(config, null, 2)); } catch (e) { console.error("Lưu config lỗi:", e.message); } }
 loadConfig();
 
+// ----- Mật khẩu thành viên (scrypt) — KHÔNG BAO GIỜ trả salt/passHash ra API công khai -----
+function hashPass(pass, salt) { return crypto.scryptSync(String(pass), String(salt), 32).toString("hex"); }
+// Khoá thống nhất của 1 member toàn hệ thống: MSNV nếu có, không thì tên (chuẩn hoá trim)
+function memberKey(m) {
+  const msnv = String((m && m.msnv) || "").trim();
+  if (msnv) return msnv;
+  return String((m && m.name) || "").trim();
+}
+function defaultPass(m) { return String((m && m.msnv) || "").trim() || "123456"; }
+// Member nào thiếu passHash thì sinh mật khẩu mặc định (MSNV || 123456)
+function initDefaultPasswords() {
+  let n = 0;
+  (config.members || []).forEach(m => {
+    if (!m.passHash) {
+      m.salt = crypto.randomBytes(16).toString("hex");
+      m.passHash = hashPass(defaultPass(m), m.salt);
+      n++;
+    }
+  });
+  if (n) saveConfig();
+  return n;
+}
+initDefaultPasswords();
+
 // ----- Token quản trị: ưu tiên biến môi trường ADMIN_TOKEN, nếu không có thì sinh & lưu ở /data -----
 const TOKEN_FILE = path.join(DATA_DIR, "admin_token.txt");
 const TOKEN_FROM_ENV = !!process.env.ADMIN_TOKEN;
@@ -58,6 +82,44 @@ function isAuthed(req) {
   // Token quản trị gửi qua header X-Admin-Token (để không đụng Authorization của Basic Auth)
   return !!req.headers["x-admin-token"] && req.headers["x-admin-token"] === ADMIN_TOKEN;
 }
+
+// ----- Phiên đăng nhập thành viên (token 30 ngày, persist ra sessions.json để sống sót qua restart) -----
+const SESSIONS_FILE = path.join(DATA_DIR, "sessions.json");
+let sessions = {};
+function saveSessions() {
+  try {
+    const tmp = SESSIONS_FILE + ".tmp";
+    fs.writeFileSync(tmp, JSON.stringify(sessions));
+    fs.renameSync(tmp, SESSIONS_FILE);
+  } catch (e) { console.error("Lưu sessions lỗi:", e.message); }
+}
+function loadSessions() {
+  try {
+    if (fs.existsSync(SESSIONS_FILE)) sessions = JSON.parse(fs.readFileSync(SESSIONS_FILE, "utf8")) || {};
+  } catch (e) { sessions = {}; }
+  const now = Date.now(); let pruned = false;
+  for (const t in sessions) {
+    if (!sessions[t] || !sessions[t].exp || sessions[t].exp < now) { delete sessions[t]; pruned = true; }
+  }
+  if (pruned) saveSessions();
+}
+function createSession(member) {
+  const token = crypto.randomBytes(24).toString("hex");
+  sessions[token] = { key: memberKey(member), name: member.name, exp: Date.now() + 30 * 24 * 3600 * 1000 };
+  saveSessions();
+  return token;
+}
+// Tra phiên; vai trò LẤY LẠI từ config hiện tại mỗi lần gọi (không tin role lưu trong session)
+function getSession(req) {
+  const tok = String(req.headers["x-session-token"] || "");
+  if (!tok || !sessions[tok]) return null;
+  const s = sessions[tok];
+  if (!s.exp || s.exp < Date.now()) return null;
+  const m = (config.members || []).find(x => memberKey(x) === s.key);
+  if (!m) return null;
+  return { token: tok, key: s.key, member: m, name: m.name, role: m.role === "manager" ? "manager" : "member" };
+}
+loadSessions();
 
 // ----- Basic Auth toàn cục (tuỳ chọn) — BẮT BUỘC bật khi đưa ra Internet -----
 // Đặt APP_PASSWORD (và tuỳ chọn APP_USER) để chặn mọi truy cập chưa đăng nhập.
@@ -100,6 +162,25 @@ function saveDB() {
   }, 250);
 }
 
+// ----- Migration owner cho dữ liệu cũ: record chưa có owner thì dò tên người lập/báo cáo/kiểm tra/chủ trì -----
+function migrateOwners() {
+  const byName = new Map((config.members || []).map(m => [String(m.name || "").trim(), m]));
+  let changed = false;
+  for (const id in db.records) {
+    const r = db.records[id];
+    if (!r || r.deleted || r.owner) continue;
+    const d = r.data || {};
+    for (const f of ["nguoiLap", "nguoiBaoCao", "nguoiKiemTra", "chuTri"]) {
+      const v = String(d[f] || "").trim();
+      if (!v) continue;
+      const m = byName.get(v);
+      if (m) { r.owner = memberKey(m); r.ownerName = m.name; changed = true; break; } // chỉ lấy field ĐẦU TIÊN khớp
+    }
+  }
+  if (changed) { saveDB(); console.log("Migration owner: đã gán chủ sở hữu cho các hồ sơ cũ."); }
+}
+migrateOwners();
+
 const MIME = {
   ".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8",
   ".css": "text/css; charset=utf-8", ".json": "application/json; charset=utf-8",
@@ -112,10 +193,13 @@ function send(res, code, body, headers) {
   res.writeHead(code, Object.assign({
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type"
+    "Access-Control-Allow-Headers": "Content-Type, X-Session-Token, X-Admin-Token"
   }, headers || {}));
   res.end(body);
 }
+
+// Loại hồ sơ member (thành viên thường) được tạo/sửa — nhân bản từ MEMBER_TYPES ở PCCC_App.html
+const MEMBER_TYPES = ["sucos", "kiemtra", "baocao"];
 
 const server = http.createServer((req, res) => {
   const u = new URL(req.url, "http://localhost");
@@ -132,6 +216,20 @@ const server = http.createServer((req, res) => {
       { "Content-Type": "application/json" });
   }
   if (u.pathname === "/api/sync" && req.method === "POST") {
+    // BẮT BUỘC có phiên đăng nhập hợp lệ — chặn ở SERVER, không chỉ ở giao diện
+    const sess = getSession(req);
+    if (!sess) return send(res, 401, JSON.stringify({ error: "Cần đăng nhập — phiên hết hạn hoặc thiếu token" }), { "Content-Type": "application/json" });
+    // Quyền ghi: manager sửa được mọi hồ sơ; thành viên chỉ sửa hồ sơ mình tạo (owner trùng khoá của mình)
+    const canWrite = (rec) => sess.role === "manager" || String(rec.owner || "") === sess.key;
+    // Tách công ty: user chỉ thấy/ghi tài liệu đúng công ty của mình (unit); hồ sơ không điền đơn vị
+    // và hồ sơ do chính mình tạo vẫn thấy. Chỉ trang quản trị (admin token) thấy toàn bộ.
+    const myUnit = String(sess.member.unit || "").trim();
+    const unitOK = (rec) => {
+      if (!myUnit) return true;
+      if (rec && rec.owner === sess.key) return true;
+      const dv = rec && rec.data ? String(rec.data.donVi || "").trim() : "";
+      return !dv || dv === myUnit;
+    };
     let body = "";
     req.on("data", c => { body += c; if (body.length > 200 * 1024 * 1024) req.destroy(); });
     req.on("end", () => {
@@ -140,30 +238,97 @@ const server = http.createServer((req, res) => {
       catch (e) { return send(res, 400, JSON.stringify({ error: "JSON không hợp lệ" }), { "Content-Type": "application/json" }); }
       const since = payload.since || null;
       const incoming = Array.isArray(payload.records) ? payload.records : [];
+      const rejected = [];
       const maxFuture = Date.now() + 24 * 3600 * 1000; // chống mốc thời gian tương lai bất thường
-      // gộp theo last-write-wins
+      // gộp theo last-write-wins, có kiểm quyền
       for (const rec of incoming) {
         if (!rec || !rec.id) continue;
         const t = Date.parse(rec.updatedAt || "");
         if (!isNaN(t) && t > maxFuture) continue; // bỏ qua bản ghi updatedAt quá xa ở tương lai
         const cur = db.records[rec.id];
+        if (rec.deleted) {
+          // Tombstone (yêu cầu xoá): chỉ áp dụng nếu record chưa có trên server HOẶC mình có quyền ghi nó (cùng công ty)
+          if ((!cur || canWrite(cur)) && unitOK(cur || rec)) db.records[rec.id] = rec;
+          else rejected.push(rec.id);
+          continue;
+        }
+        // Record thường: member chỉ được tạo/sửa đúng loại hồ sơ của thành viên
+        if (sess.role !== "manager" && !MEMBER_TYPES.includes(rec.type)) { rejected.push(rec.id); continue; }
+        if (!unitOK(rec)) { rejected.push(rec.id); continue; } // tài liệu công ty khác → từ chối
+        if (cur && !canWrite(cur)) { rejected.push(rec.id); continue; } // hồ sơ của người khác → bỏ qua
+        if (cur) {
+          rec.owner = cur.owner; rec.ownerName = cur.ownerName; // giữ nguyên chủ sở hữu gốc (manager sửa cũng không đổi chủ)
+        } else {
+          rec.owner = sess.key; rec.ownerName = sess.name; // hồ sơ mới → server tự gán chủ, không tin owner client gửi
+        }
         if (!cur || String(rec.updatedAt || "") >= String(cur.updatedAt || "")) db.records[rec.id] = rec;
       }
-      // trả về các bản ghi đổi từ lần đồng bộ trước
+      // trả về các bản ghi đổi từ lần đồng bộ trước — CHỈ những bản thuộc công ty của người gọi
       const changed = [];
       for (const id in db.records) {
         const r = db.records[id];
+        if (!unitOK(r)) continue;
         if (!since || String(r.updatedAt || "") > String(since)) changed.push(r);
       }
       if (incoming.length) saveDB();
-      return send(res, 200, JSON.stringify({ now: nowISO(), changed }), { "Content-Type": "application/json" });
+      return send(res, 200, JSON.stringify({ now: nowISO(), changed, rejected }), { "Content-Type": "application/json" });
     });
     return;
   }
 
-  // ---- API cấu hình (công khai: chỉ trả members để app hiển thị màn hình chọn tên) ----
+  // ---- Đăng nhập thành viên (mật khẩu scrypt) ----
+  if (u.pathname === "/api/login" && req.method === "POST") {
+    return readBody(req, res, p => {
+      const name = String((p && p.name) || "").trim();
+      const msnv = String((p && p.msnv) || "").trim();
+      const pass = String((p && p.password) || "");
+      const m = (config.members || []).find(x => String(x.name || "").trim() === name && String(x.msnv || "").trim() === msnv);
+      if (!m || !m.passHash || !m.salt || hashPass(pass, m.salt) !== m.passHash)
+        return send(res, 401, JSON.stringify({ error: "Sai tên đăng nhập hoặc mật khẩu" }), { "Content-Type": "application/json" });
+      const token = createSession(m);
+      return send(res, 200, JSON.stringify({ token, member: { name: m.name, msnv: m.msnv || "", unit: m.unit || "", role: m.role === "manager" ? "manager" : "member" } }), { "Content-Type": "application/json" });
+    });
+  }
+
+  // ---- Ai đang đăng nhập (tra vai trò MỚI từ config) ----
+  if (u.pathname === "/api/whoami") {
+    const s = getSession(req);
+    if (!s) return send(res, 401, JSON.stringify({ error: "Phiên hết hạn — hãy đăng nhập lại" }), { "Content-Type": "application/json" });
+    const m = s.member;
+    return send(res, 200, JSON.stringify({ name: m.name, msnv: m.msnv || "", unit: m.unit || "", role: m.role === "manager" ? "manager" : "member" }), { "Content-Type": "application/json" });
+  }
+
+  // ---- Đăng xuất (xoá token) ----
+  if (u.pathname === "/api/logout" && req.method === "POST") {
+    const tok = String(req.headers["x-session-token"] || "");
+    if (tok && sessions[tok]) { delete sessions[tok]; saveSessions(); }
+    return send(res, 200, JSON.stringify({ ok: true }), { "Content-Type": "application/json" });
+  }
+
+  // ---- Người dùng tự đổi mật khẩu của chính mình ----
+  if (u.pathname === "/api/change-password" && req.method === "POST") {
+    const s = getSession(req);
+    if (!s) return send(res, 401, JSON.stringify({ error: "Phiên hết hạn — hãy đăng nhập lại" }), { "Content-Type": "application/json" });
+    return readBody(req, res, p => {
+      const oldP = String((p && p.oldPassword) || ""), newP = String((p && p.newPassword) || "");
+      if (!s.member.passHash || !s.member.salt || hashPass(oldP, s.member.salt) !== s.member.passHash)
+        return send(res, 400, JSON.stringify({ error: "Mật khẩu cũ không đúng" }), { "Content-Type": "application/json" });
+      if (newP.length < 6) return send(res, 400, JSON.stringify({ error: "Mật khẩu mới tối thiểu 6 ký tự" }), { "Content-Type": "application/json" });
+      s.member.salt = crypto.randomBytes(16).toString("hex");
+      s.member.passHash = hashPass(newP, s.member.salt);
+      saveConfig();
+      return send(res, 200, JSON.stringify({ ok: true, name: s.member.name }), { "Content-Type": "application/json" });
+    });
+  }
+
+  // ---- API cấu hình (công khai: CHỈ trả members KHÔNG kèm salt/passHash) ----
   if (u.pathname === "/api/config" && req.method === "GET") {
-    return send(res, 200, JSON.stringify({ company: config.company || "", companies: config.companies || [], members: config.members || [], signRoles: config.signRoles || {} }), { "Content-Type": "application/json" });
+    const members = (config.members || []).map(m => ({
+      name: m.name || "", msnv: m.msnv || "", unit: m.unit || "",
+      department: m.department || "", position: m.position || "",
+      role: m.role === "manager" ? "manager" : "member"
+    }));
+    return send(res, 200, JSON.stringify({ company: config.company || "", companies: config.companies || [], members, signRoles: config.signRoles || {} }), { "Content-Type": "application/json" });
   }
 
   // ---- API quản trị (cần token) ----
@@ -182,6 +347,7 @@ const server = http.createServer((req, res) => {
     if (u.pathname === "/api/admin/config" && req.method === "POST")
       return readBody(req, res, p => {
         if (!p || !Array.isArray(p.members)) return send(res, 400, JSON.stringify({ error: "Thiếu danh sách members[]" }), { "Content-Type": "application/json" });
+        const oldMembers = config.members || []; // giữ hash cũ để merge bên dưới
         config.company = String(p.company || "");
         if (Array.isArray(p.companies)) {
           const list = p.companies.map(s => String(s).trim()).filter(Boolean);
@@ -192,6 +358,14 @@ const server = http.createServer((req, res) => {
           unit: String(m.unit || "").trim(), department: String(m.department || "").trim(),
           position: String(m.position || "").trim(), role: m.role === "manager" ? "manager" : "member"
         })).filter(m => m.name);
+        // Merge giữ nguyên salt/passHash của member cũ theo khoá (admin.html không gửi hash)
+        const oldBykey = {};
+        (oldMembers || []).forEach(om => { oldBykey[memberKey(om)] = om; });
+        config.members.forEach(m => {
+          const om = oldBykey[memberKey(m)];
+          if (om && om.salt && om.passHash) { m.salt = om.salt; m.passHash = om.passHash; }
+        });
+        initDefaultPasswords(); // member mới thêm → mật khẩu mặc định (MSNV || 123456)
         if (p.signRoles && typeof p.signRoles === "object" && !Array.isArray(p.signRoles)) {
           const sr = {};
           for (const key of Object.keys(p.signRoles)) {
@@ -234,6 +408,31 @@ const server = http.createServer((req, res) => {
         ADMIN_TOKEN = nt; try { fs.writeFileSync(TOKEN_FILE, nt); } catch (e) {}
         return send(res, 200, JSON.stringify({ ok: true }), { "Content-Type": "application/json" });
       });
+    }
+
+    if (u.pathname === "/api/admin/password" && req.method === "POST")
+      return readBody(req, res, p => {
+        const msnv = String((p && p.msnv) || "").trim();
+        const name = String((p && p.name) || "").trim();
+        const pass = String((p && p.password) || "");
+        const m = (config.members || []).find(x => (msnv ? String(x.msnv || "").trim() === msnv : String(x.name || "").trim() === name));
+        if (!m) return send(res, 404, JSON.stringify({ error: "Không tìm thấy thành viên" }), { "Content-Type": "application/json" });
+        if (pass.length < 4) return send(res, 400, JSON.stringify({ error: "Mật khẩu tối thiểu 4 ký tự" }), { "Content-Type": "application/json" });
+        m.salt = crypto.randomBytes(16).toString("hex");
+        m.passHash = hashPass(pass, m.salt);
+        saveConfig();
+        return send(res, 200, JSON.stringify({ ok: true, member: m.name, key: memberKey(m) }), { "Content-Type": "application/json" });
+      });
+
+    if (u.pathname === "/api/admin/password-init" && req.method === "POST") {
+      let n = 0;
+      (config.members || []).forEach(m => {
+        m.salt = crypto.randomBytes(16).toString("hex");
+        m.passHash = hashPass(defaultPass(m), m.salt); // MSNV, không có MSNV thì 123456
+        n++;
+      });
+      saveConfig();
+      return send(res, 200, JSON.stringify({ ok: true, count: n }), { "Content-Type": "application/json" });
     }
     return send(res, 404, JSON.stringify({ error: "API quản trị không tồn tại" }), { "Content-Type": "application/json" });
   }

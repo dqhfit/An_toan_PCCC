@@ -219,6 +219,18 @@
     .toast{position:fixed;bottom:20px;right:20px;background:var(--primary);color:#fff;padding:11px 16px;border-radius:8px;font-size:13px;box-shadow:0 4px 14px rgba(0,0,0,.2);opacity:0;transform:translateY(10px);transition:.25s;z-index:50;}
     .toast.show{opacity:1;transform:none;}
 
+    /* ===== Chế độ xem (hồ sơ của người khác — chỉ đọc) ===== */
+    .owner-chip{font-weight:normal;font-size:11px;color:var(--muted);}
+    .viewbtn{margin-left:6px;flex:none;}
+    #viewer{display:none;position:fixed;inset:0;background:rgba(15,25,45,.6);z-index:110;padding:14px;}
+    #viewer.open{display:flex;flex-direction:column;}
+    .view-wrap{background:#f4f6f9;border-radius:12px;max-width:900px;width:100%;margin:0 auto;display:flex;flex-direction:column;max-height:100%;box-shadow:0 12px 44px rgba(0,0,0,.4);overflow:hidden;}
+    .view-bar{display:flex;align-items:center;gap:10px;padding:10px 14px;background:#fff;border-bottom:1px solid var(--line);flex-wrap:wrap;}
+    .view-bar b{color:var(--primary);font-size:14px;}
+    .view-owner{font-size:12px;color:var(--muted);font-style:italic;}
+    .view-body{overflow-y:auto;padding:20px 22px;background:#fff;flex:1;}
+    @media print{#viewer{display:none !important;}}
+
     /* ===== Print area ===== */
     #print-root{display:none;}
     @media print{
@@ -300,6 +312,7 @@
         <button class="btn ghost block" style="margin-bottom:8px" onclick="showDashboard()">📊 Bảng tổng quan</button>
         <button class="btn ghost block" style="margin-bottom:8px" onclick="showGuide()">📖 Hướng dẫn &amp; Nhiệm vụ</button>
         <a id="adminLink" href="admin.html" target="_blank" class="btn ghost block" style="display:none;margin-bottom:10px;text-decoration:none;text-align:center">⚙ Trang quản trị</a>
+        <button id="logoutBtn" class="btn ghost block" style="display:none;margin-bottom:10px" onclick="doLogout()" title="Kết thúc phiên của bạn trên máy này">⎋ Đăng xuất</button>
         <div class="new-wrap">
             <button class="btn block" onclick="toggleNewMenu(event)">＋ Tạo hồ sơ mới ▾</button>
             <div class="new-menu" id="newMenu"></div>
@@ -324,6 +337,7 @@
 
 <div id="login" class="login"></div>
 <div id="picker" class="login"></div>
+<div id="viewer"></div>
 <div class="toast" id="toast"></div>
 
 <script src="pccc_members.js"></script>
@@ -751,6 +765,7 @@ function applyRoleUI(){
         if(chip)chip.style.display="none";
     }
     const imp=document.getElementById("importBtn");if(imp)imp.style.display=ROLE==="member"?"none":"";
+    const lo=document.getElementById("logoutBtn");if(lo)lo.style.display=CURRENT_USER?"":"none";
 }
 let DASH_YEAR = nowYear();
 
@@ -763,8 +778,38 @@ let SIGN_ROLES = {};
 function getSigns(typeKey){const ov=SIGN_ROLES[typeKey];return (Array.isArray(ov)&&ov.length)?ov:TYPES[typeKey].signs;}
 let CURRENT_USER = null;
 function roleLabel(r){return r==="member"?"Thành viên":"Đội trưởng / Quản lý";}
-function tryRestoreUser(){
-    try{const raw=localStorage.getItem("pccc_user");if(raw){const u=JSON.parse(raw);const m=MEMBERS.find(x=>x.name===u.name&&(x.msnv||"")===(u.msnv||""));if(m){CURRENT_USER=m;ROLE=(m.role==="manager")?"manager":"member";return true;}}}catch(e){}
+/* Khoá thành viên thống nhất với server: MSNV nếu có, không thì tên (trim) */
+function memberKeyOf(m){const msnv=String((m&&m.msnv)||"").trim();if(msnv)return msnv;return String((m&&m.name)||"").trim();}
+function myKey(){return CURRENT_USER?memberKeyOf(CURRENT_USER):"";}
+/* Quyền sửa/xoá hồ sơ: manager sửa được mọi hồ sơ; thành viên chỉ sửa hồ sơ mình tạo */
+function canEdit(rec){if(!rec)return false;if(ROLE==="manager")return true;return String(rec.owner||"")===myKey()&&!!myKey();}
+/* Tách công ty: user chỉ thấy tài liệu đúng công ty của mình (theo unit); hồ sơ không điền đơn vị
+   và hồ sơ do chính mình tạo vẫn thấy. Toàn bộ dữ liệu chỉ xem được ở trang quản trị (admin). */
+function myUnit(){return CURRENT_USER?String(CURRENT_USER.unit||"").trim():"";}
+function unitAllows(rec){
+    if(!CURRENT_USER)return false; // chưa đăng nhập → không hiện gì
+    const u=myUnit();if(!u)return true;
+    if(String(rec.owner||"")===myKey())return true;
+    const dv=(rec.data&&rec.data.donVi)?String(rec.data.donVi).trim():"";
+    return !dv||dv===u;
+}
+async function tryRestoreUser(){
+    try{
+        const raw=localStorage.getItem("pccc_user");if(!raw)return false;
+        const u=JSON.parse(raw);
+        const m=MEMBERS.find(x=>x.name===u.name&&(x.msnv||"")===(u.msnv||""));
+        if(!m)return false;
+        if(SYNC.base){
+            const tok=localStorage.getItem("pccc_token");if(!tok)return false;
+            const res=await fetch(SYNC.base+"/whoami",{headers:{"X-Session-Token":tok}});
+            if(!res.ok){localStorage.removeItem("pccc_token");return false;} // token hết hạn → hiện lại login
+            const who=await res.json();
+            ROLE=(who.role==="manager")?"manager":"member"; // vai trò mới nhất từ server
+        }else{
+            ROLE=(m.role==="manager")?"manager":"member"; // không có server (mở bằng file://) — coi như cấu hình danh bạ
+        }
+        CURRENT_USER=m;return true;
+    }catch(e){console.warn("restore",e);}
     return false;
 }
 function showLogin(){
@@ -779,22 +824,50 @@ function showLogin(){
         <div class="logo">PCCC</div>
         <h2>Hồ sơ An toàn - PCCC</h2>
         <p>${esc(company)}</p>
-        <label>Chọn tên của bạn để bắt đầu</label>
+        <label>Chọn tên của bạn</label>
         <select id="loginSel" size="1">${opts}</select>
-        <button class="btn block" onclick="chooseUser(document.getElementById('loginSel').value)">Vào ứng dụng →</button>
+        <label>Mật khẩu${SYNC.base?"":" (máy này chưa kết nối server)"}</label>
+        <input type="password" id="loginPass" style="width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:14px;margin-bottom:6px" onkeydown="if(event.key==='Enter')chooseUser(document.getElementById('loginSel').value)" autocomplete="current-password">
+        <div id="loginErr" style="color:var(--accent);font-size:12.5px;min-height:16px;text-align:left"></div>
+        <button class="btn block" onclick="chooseUser(document.getElementById('loginSel').value)">Đăng nhập →</button>
         ${hasCur?`<button class="btn ghost block" style="margin-top:8px" onclick="closeLogin()">Hủy</button>`:""}
     </div>`;
     if(hasCur){const idx=MEMBERS.indexOf(CURRENT_USER);const s=document.getElementById("loginSel");if(s&&idx>=0)s.value=idx;}
     document.getElementById("login").classList.add("open");
+    const p=document.getElementById("loginPass");if(p)p.focus();
 }
 function closeLogin(){document.getElementById("login").classList.remove("open");}
-function chooseUser(i){
+async function chooseUser(i){
     i=parseInt(i);const m=MEMBERS[i];if(!m)return;
-    CURRENT_USER=m;ROLE=(m.role==="manager")?"manager":"member";
+    const err=document.getElementById("loginErr");
+    let role=null;
+    if(SYNC.base){
+        const pass=(document.getElementById("loginPass")||{}).value||"";
+        if(err)err.textContent="";
+        try{
+            const res=await fetch(SYNC.base+"/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:m.name,msnv:m.msnv||"",password:pass})});
+            const j=await res.json().catch(()=>({}));
+            if(!res.ok){if(err)err.textContent=j.error||"Đăng nhập thất bại";toast(j.error||"Sai mật khẩu");return;}
+            localStorage.setItem("pccc_token",j.token||"");
+            if(j.member&&j.member.role)role=j.member.role;
+        }catch(e){if(err)err.textContent="Lỗi kết nối server: "+e.message;return;}
+    }
+    CURRENT_USER=m;ROLE=role||(m.role==="manager"?"manager":"member");
     localStorage.setItem("pccc_user",JSON.stringify({name:m.name,msnv:m.msnv||""}));
+    STATE.records=STATE.records.filter(unitAllows); // chỉ giữ tài liệu công ty của mình
     closeLogin();applyRoleUI();buildNewMenu();
     if(ROLE==="member"&&STATE.current&&!MEMBER_TYPES.includes(STATE.current.type)){STATE.current=null;STATE.view="welcome";}
     renderAll();toast("Xin chào "+m.name+" — "+roleLabel(ROLE));
+}
+async function doLogout(){
+    try{
+        const tok=localStorage.getItem("pccc_token");
+        if(SYNC.base&&tok)await fetch(SYNC.base+"/logout",{method:"POST",headers:{"X-Session-Token":tok}});
+    }catch(e){/* server không tới được vẫn đăng xuất local */}
+    localStorage.removeItem("pccc_token");localStorage.removeItem("pccc_user");
+    CURRENT_USER=null;
+    STATE.current=null;STATE.editingId=null;STATE.dirty=false;STATE.view="welcome";
+    closeViewer();applyRoleUI();buildNewMenu();renderAll();showLogin();toast("Đã đăng xuất");
 }
 function applyUserDefaults(d){
     if(!CURRENT_USER)return;
@@ -843,16 +916,26 @@ function emptyRow(f){const r={};f.cols.forEach(c=>r[c.n]=(c.def!=null?c.def:""))
 
 function createRecord(typeKey){
     if(!guardUnsaved())return;
+    if(ROLE!=="manager"&&!MEMBER_TYPES.includes(typeKey)){toast("Bạn không có quyền tạo loại hồ sơ này");return;}
     const rec={id:uid(),type:typeKey,createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),data:blankData(typeKey)};
+    rec.owner=myKey();rec.ownerName=CURRENT_USER?CURRENT_USER.name:""; // server vẫn tự xác nhận lại
     applyUserDefaults(rec.data);
     STATE.current=rec;STATE.editingId=null;STATE.dirty=false;STATE.view="edit"; // chưa lưu tới khi bấm 💾 Lưu
     closeSidebarMobile();renderAll();
     toast("Hồ sơ mới — bấm 💾 Lưu để lưu lại");
 }
-function openRecord(id){if(!guardUnsaved())return;const r=STATE.records.find(x=>x.id===id);if(!r)return;STATE.current=JSON.parse(JSON.stringify(r));STATE.editingId=id;STATE.dirty=false;STATE.view="edit";closeSidebarMobile();renderAll();}
+function openRecord(id){
+    const r=STATE.records.find(x=>x.id===id);
+    if(r&&!canEdit(r)){viewRecord(id);return;} // hồ sơ của người khác → chỉ xem
+    if(!guardUnsaved())return;
+    if(!r)return;
+    STATE.current=JSON.parse(JSON.stringify(r));STATE.editingId=id;STATE.dirty=false;STATE.view="edit";closeSidebarMobile();renderAll();
+}
 function guardUnsaved(){if(STATE.dirty&&STATE.current){if(confirm("Có thay đổi chưa lưu.\n\n• OK = LƯU lại\n• Cancel = Bỏ thay đổi")){saveRecord(true);}else{STATE.dirty=false;}}return true;}
 function deleteRecord(id){
     if(STATE.current&&STATE.current.id===id&&STATE.editingId===null){STATE.current=null;STATE.dirty=false;STATE.view="welcome";renderAll();toast("Đã hủy hồ sơ mới");return;}
+    const r=STATE.records.find(x=>x.id===id);
+    if(r&&!canEdit(r)){toast("Bạn không có quyền xóa hồ sơ này");return;}
     if(!confirm("Xóa hồ sơ này? Hành động không thể hoàn tác."))return;
     STATE.records=STATE.records.filter(r=>r.id!==id);
     if(STATE.current&&STATE.current.id===id){STATE.current=null;STATE.editingId=null;STATE.dirty=false;STATE.view="welcome";}
@@ -862,13 +945,16 @@ function deleteRecord(id){
 }
 function duplicateRecord(id){
     const r=getRec(id);if(!r)return;
+    if(!canEdit(r)){toast("Bạn không có quyền nhân bản hồ sơ này");return;}
     const c=JSON.parse(JSON.stringify(r));c.id=uid();c.createdAt=c.updatedAt=new Date().toISOString();
+    c.owner=myKey();c.ownerName=CURRENT_USER?CURRENT_USER.name:c.ownerName; // bản sao là của mình
     STATE.records.unshift(c);persistRecord(c);markDirty(c.id);syncNow(false);renderList();toast("Đã nhân bản hồ sơ");openRecord(c.id);
 }
 function touch(){if(STATE.current){STATE.dirty=true;markUnsaved();}}
 function markUnsaved(){const f=document.getElementById("savedFlag");if(f){f.textContent="● Chưa lưu";f.className="saved-flag draft";}maybeRetitle();}
 function saveRecord(silent){
     if(!STATE.current)return;
+    if(!canEdit(STATE.current)){toast("Bạn không có quyền sửa hồ sơ này");STATE.dirty=false;renderAll();return;}
     STATE.current.updatedAt=new Date().toISOString();
     const id=STATE.current.id, idx=STATE.records.findIndex(r=>r.id===id);
     if(idx>=0)STATE.records[idx]=STATE.current; else STATE.records.unshift(STATE.current);
@@ -920,8 +1006,9 @@ function renderList(){
     el.innerHTML=recs.map(r=>{
         const t=TYPES[r.type];const active=STATE.current&&STATE.current.id===r.id;
         const donVi=(r.data&&r.data.donVi)||"";
+        const own=canEdit(r);
         return `<div class="rec ${active?'active':''}" onclick="openRecord('${r.id}')">
-            <div class="t">${esc(recTitle(r))}</div>
+            <div class="t" style="display:flex;justify-content:space-between;align-items:center;gap:8px"><span>${esc(recTitle(r))}${own?"":` <span class="owner-chip">— ${esc(r.ownerName||"không rõ người tạo")}</span>`}</span>${own?"":`<button class="btn ghost sm viewbtn" onclick="event.stopPropagation();viewRecord('${r.id}')">👁 Xem</button>`}</div>
             <div class="m"><span class="tags"><span class="tag">${t.icon} ${esc(t.label)}</span>${donVi?`<span class="tag unit">${esc(donVi)}</span>`:""}</span><span>${fmtDateTime(r.updatedAt)}</span></div>
         </div>`;
     }).join("");
@@ -1392,6 +1479,7 @@ document.addEventListener("keydown",e=>{
     else if(e.key==="ArrowLeft")lbNav(-1);
     else if(e.key==="ArrowRight")lbNav(1);
 });
+document.addEventListener("keydown",e=>{if(e.key==="Escape")closeViewer();});
 function delImage(name,i){STATE.current.data[name].splice(i,1);touch();renderMain();}
 function setCaption(name,i,val){STATE.current.data[name][i].caption=val;touch();}
 
@@ -1500,7 +1588,7 @@ function importAll(input){
             else if(o.record)incoming=[o.record];
             else if(Array.isArray(o))incoming=o;
             else throw new Error("Không nhận dạng được cấu trúc JSON");
-            incoming=incoming.filter(r=>r&&r.type&&TYPES[r.type]&&r.data);
+            incoming=incoming.filter(r=>r&&r.type&&TYPES[r.type]&&r.data).filter(unitAllows); // chỉ nhập tài liệu công ty của mình
             if(!incoming.length){toast("File không có hồ sơ hợp lệ");return;}
             const mode=confirm("Nhập "+incoming.length+" hồ sơ.\n\n• OK = Gộp thêm vào dữ liệu hiện có\n• Cancel = Thay thế toàn bộ dữ liệu hiện có");
             if(mode){
@@ -1536,8 +1624,14 @@ function getTombstones(){try{return JSON.parse(localStorage.getItem("pccc_tomb")
 function addTombstone(id){const t=getTombstones();if(!t.find(x=>x.id===id))t.push({id,deleted:true,updatedAt:new Date().toISOString()});localStorage.setItem("pccc_tomb",JSON.stringify(t));const d=getDirty();d.delete(id);saveDirtySet(d);}
 function scheduleSync(){if(!SYNC.base)return;clearTimeout(_syncTimer);_syncTimer=setTimeout(()=>syncNow(false),2500);}
 function setSyncStatus(s){const b=document.getElementById("syncBtn");if(!b)return;b.style.display="";b.textContent=s==="syncing"?"☁ Đang đồng bộ…":(s==="err"?"⚠ Lỗi đồng bộ":"☁ Đồng bộ");}
+function sessHeaders(){const h={};const tok=localStorage.getItem("pccc_token");if(tok)h["X-Session-Token"]=tok;return h;}
+function forceLogin(){ // token hết hạn/bị xoá → quay lại màn hình đăng nhập
+    localStorage.removeItem("pccc_token");CURRENT_USER=null;
+    applyRoleUI();showLogin();toast("Phiên hết hạn — hãy đăng nhập lại");
+}
 async function syncNow(manual){
     if(!SYNC.base){if(manual)toast("Chưa bật đồng bộ — hãy mở app qua server (http://localhost:3000)");return;}
+    if(!localStorage.getItem("pccc_token")){if(manual){showLogin();toast("Hãy đăng nhập để đồng bộ");}return;}
     if(_syncing){if(manual)toast("Đang đồng bộ…");return;}
     _syncing=true;setSyncStatus("syncing");
     try{
@@ -1545,11 +1639,13 @@ async function syncNow(manual){
         const dirty=getDirty();
         const sentRecs=STATE.records.filter(r=>dirty.has(r.id));
         const sentTombs=getTombstones();
-        const res=await fetch(SYNC.base+"/sync",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({since,records:sentRecs.concat(sentTombs)})});
+        const res=await fetch(SYNC.base+"/sync",{method:"POST",headers:Object.assign({"Content-Type":"application/json"},sessHeaders()),body:JSON.stringify({since,records:sentRecs.concat(sentTombs)})});
+        if(res.status===401){forceLogin();setSyncStatus("err");return;} // hết phiên → hiện login, dừng
         if(!res.ok)throw new Error("HTTP "+res.status);
         const out=await res.json();
         let applied=0;
         for(const rec of (out.changed||[])){
+            if(!unitAllows(rec))continue; // tài liệu công ty khác — không lưu/không hiện
             if(STATE.current&&rec.id===STATE.current.id)continue; // không ghi đè hồ sơ đang mở
             const idx=STATE.records.findIndex(r=>r.id===rec.id);
             if(rec.deleted){ if(idx>=0){STATE.records.splice(idx,1);applied++;} idbDel(rec.id).catch(()=>{}); }
@@ -1558,9 +1654,30 @@ async function syncNow(manual){
         const d=getDirty();sentRecs.forEach(r=>d.delete(r.id));saveDirtySet(d);
         const remain=getTombstones().filter(t=>!sentTombs.find(s=>s.id===t.id));localStorage.setItem("pccc_tomb",JSON.stringify(remain));
         if(out.now)localStorage.setItem("pccc_lastsync",out.now);
+        // Bị server từ chối (không đủ quyền) → bỏ khỏi dirty, kéo lại bản trên server
+        const rej=Array.isArray(out.rejected)?out.rejected:[];
+        if(rej.length){
+            const dd=getDirty();rej.forEach(id=>dd.delete(id));saveDirtySet(dd);
+            try{
+                const r2=await fetch(SYNC.base+"/sync",{method:"POST",headers:Object.assign({"Content-Type":"application/json"},sessHeaders()),body:JSON.stringify({since:null,records:[]})});
+                if(r2.ok){
+                    const o2=await r2.json();const rejSet=new Set(rej);
+                    for(const rec of (o2.changed||[])){
+                        if(!rejSet.has(rec.id)||!unitAllows(rec))continue;
+                        if(STATE.current&&rec.id===STATE.current.id){STATE.current=JSON.parse(JSON.stringify(rec));continue;}
+                        const idx=STATE.records.findIndex(r=>r.id===rec.id);
+                        if(rec.deleted){if(idx>=0)STATE.records.splice(idx,1);idbDel(rec.id).catch(()=>{});}
+                        else if(idx<0){STATE.records.push(rec);idbPut(rec).catch(()=>{});}
+                        else{STATE.records[idx]=rec;idbPut(rec).catch(()=>{});}
+                    }
+                }
+            }catch(e){console.warn("pull rejected",e);}
+            toast("⚠ Bạn không có quyền sửa "+rej.length+" hồ sơ — đã khôi phục bản trên server");
+            renderAll();
+        }
         setSyncStatus("ok");
         if(applied)renderAll();
-        if(manual)toast("Đồng bộ xong"+(applied?(" · "+applied+" cập nhật"):""));
+        if(manual&&!rej.length)toast("Đồng bộ xong"+(applied?(" · "+applied+" cập nhật"):""));
     }catch(e){setSyncStatus("err");if(manual)toast("Lỗi đồng bộ: "+e.message);console.warn("sync",e);}
     finally{_syncing=false;}
 }
@@ -1583,6 +1700,25 @@ function printRecord(id){
     document.getElementById("print-root").innerHTML=renderPrint(r);
     window.print();
 }
+/* ---- Chế độ XEM hồ sơ (dùng cho hồ sơ của người khác): renderPrint vào overlay, không vào editor ---- */
+function viewRecord(id){
+    const r=getRec(id);if(!r)return;
+    if(canEdit(r)){openRecord(id);return;} // có quyền thì vào editor như thường
+    const v=document.getElementById("viewer");
+    v.innerHTML=`<div class="view-wrap">
+        <div class="view-bar">
+            <span class="tag">${TYPES[r.type].icon} ${esc(TYPES[r.type].label)}</span>
+            <b>${esc(recTitle(r))}</b>
+            ${r.ownerName?`<span class="view-owner">— tạo bởi ${esc(r.ownerName)} (chỉ xem)</span>`:`<span class="view-owner">(chỉ xem)</span>`}
+            <span style="flex:1"></span>
+            <button class="btn ghost sm" onclick="printRecord('${r.id}')">🖨 In / Xuất PDF</button>
+            <button class="btn sm" onclick="closeViewer()">✕ Đóng</button>
+        </div>
+        <div class="view-body">${renderPrint(r)}</div>
+    </div>`;
+    v.classList.add("open");
+}
+function closeViewer(){document.getElementById("viewer").classList.remove("open");}
 function pHeaderTop(r){
     const t=TYPES[r.type],d=r.data,unit=d.donVi||"";
     const docno=d.soBienBan||d.soKeHoach||d.maTaiLieu||d.soVanBan||"";
@@ -1672,7 +1808,8 @@ async function init(){
         alert("Trình duyệt không hỗ trợ/đang chặn IndexedDB. Dữ liệu sẽ không lưu được. Hãy mở bằng Chrome/Edge ở chế độ thường (không ẩn danh).");
     }
     await loadServerConfig();
-    if(MEMBERS)tryRestoreUser();
+    if(MEMBERS)await tryRestoreUser();
+    STATE.records=STATE.records.filter(unitAllows); // chỉ hiện tài liệu công ty của người đăng nhập
     applyRoleUI();buildNewMenu();
     renderAll();
     if(MEMBERS && !CURRENT_USER)showLogin();
