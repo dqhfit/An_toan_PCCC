@@ -858,6 +858,7 @@ async function chooseUser(i){
     closeLogin();applyRoleUI();buildNewMenu();
     if(ROLE==="member"&&STATE.current&&!MEMBER_TYPES.includes(STATE.current.type)){STATE.current=null;STATE.view="welcome";}
     renderAll();toast("Xin chào "+m.name+" — "+roleLabel(ROLE));
+    syncNow(false); // kéo tài liệu từ server ngay sau khi có token (không chờ nhịp tự động)
 }
 async function doLogout(){
     try{
